@@ -108,6 +108,22 @@ export const AssetPanel = (props: Props): JSX.Element => {
                     <span class="hint">{statusLabels[entry().status]}</span>
                     <button
                       type="button"
+                      class="control small"
+                      aria-label={`Retry ${entry().name}`}
+                      title="Download this asset again"
+                      disabled={
+                        applying() ||
+                        entry().status === "loading" ||
+                        !isSupportedAssetUrl(entry().url.trim())
+                      }
+                      onClick={() => {
+                        draft.retry(entry());
+                      }}
+                    >
+                      <Icon name="refresh" />
+                    </button>
+                    <button
+                      type="button"
                       class="control small toggle-button"
                       aria-label={`Favorite ${entry().name}`}
                       aria-pressed={favorited()}

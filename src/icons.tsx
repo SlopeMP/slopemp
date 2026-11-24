@@ -35,6 +35,7 @@ import playerSkipBack from "@tabler/icons/outline/player-skip-back.svg" with { t
 import playerSkipForward from "@tabler/icons/outline/player-skip-forward.svg" with { type: "text" };
 import playerStop from "@tabler/icons/outline/player-stop.svg" with { type: "text" };
 import plus from "@tabler/icons/outline/plus.svg" with { type: "text" };
+import refresh from "@tabler/icons/outline/refresh.svg" with { type: "text" };
 import repeat from "@tabler/icons/outline/repeat.svg" with { type: "text" };
 import restore from "@tabler/icons/outline/restore.svg" with { type: "text" };
 import settings from "@tabler/icons/outline/settings.svg" with { type: "text" };
@@ -88,6 +89,7 @@ const icons = {
   "player-skip-forward": playerSkipForward,
   "player-stop": playerStop,
   plus,
+  refresh,
   repeat,
   restore,
   settings,

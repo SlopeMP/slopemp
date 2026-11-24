@@ -148,25 +148,14 @@ const acquireLoad = async (signal?: AbortSignal): Promise<void> => {
 
 export const loadSoundFont = async (
   id: string,
-  source: ArrayBuffer | string,
+  source: ArrayBuffer | (() => Promise<ArrayBuffer>),
   signal?: AbortSignal,
 ): Promise<SoundFontPreset[]> => {
-  // Fetch inside the queue so many assets cannot hold compressed data and
-  // temporary decoded samples in memory at the same time.
+  // Read the asset inside the queue to limit concurrent encoded and decoded data.
   await acquireLoad(signal);
   try {
     signal?.throwIfAborted();
-    const data =
-      typeof source === "string"
-        ? await fetch(source, { signal: signal ?? null }).then(
-            async (response): Promise<ArrayBuffer> => {
-              if (!response.ok) {
-                throw new Error(`Could not load SoundFont (${response.status}).`);
-              }
-              return await response.arrayBuffer();
-            },
-          )
-        : source;
+    const data = typeof source === "function" ? await source() : source;
     signal?.throwIfAborted();
     const font = await decodeSoundFont(parseSoundFont(data), signal);
     signal?.throwIfAborted();

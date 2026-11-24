@@ -3,9 +3,7 @@ import { expect, test } from "@playwright/test";
 import { createSong } from "../../src/model";
 import { encodeSong } from "../../src/storage";
 
-test("removing a decoded SoundFont releases its source cache and Undo reloads it", async ({
-  page,
-}) => {
+test("Undo restores the removed SoundFont without downloading it again", async ({ page }) => {
   const requests = new Map<string, number>();
   await page.route("**/test-assets/memory-*.sf2", async (route) => {
     const { pathname } = new URL(route.request().url());
@@ -37,7 +35,7 @@ test("removing a decoded SoundFont releases its source cache and Undo reloads it
   expect(requestCounts).toEqual(
     expect.arrayContaining([
       { filename: "memory-0.sf2", count: 1 },
-      { filename: "memory-1.sf2", count: 2 },
+      { filename: "memory-1.sf2", count: 1 },
       { filename: "memory-2.sf2", count: 1 },
     ]),
   );

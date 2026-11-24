@@ -1,43 +1,52 @@
-export const createIndexedStore = (databaseName: string, storeName: string) => {
+type IndexedStore = {
+  read: (key: string) => Promise<unknown>;
+  remove: (key: string) => Promise<void>;
+  write: (key: string, value: unknown) => Promise<void>;
+};
+
+export const createIndexedStore = (databaseName: string, storeName: string): IndexedStore => {
   let database: IDBDatabase | null = null;
   let opening: Promise<IDBDatabase> | null = null;
 
-  const openDatabase = (): Promise<IDBDatabase> =>
-    new Promise<IDBDatabase>((resolve, reject) => {
-      const request = globalThis.indexedDB.open(databaseName, 1);
-      let blocked = false;
-      request.addEventListener("blocked", () => {
-        blocked = true;
-        reject(new Error("Another tab is blocking browser storage."));
-      });
-      request.addEventListener("upgradeneeded", () => {
-        request.result.createObjectStore(storeName);
-      });
-      request.addEventListener("error", () => {
-        reject(request.error ?? new Error("Could not open browser storage."));
-      });
-      request.addEventListener("success", () => {
-        const opened = request.result;
-        if (blocked) {
-          opened.close();
-          return;
-        }
-        const forget = (): void => {
-          if (database === opened) {
-            database = null;
-          }
-        };
-        opened.addEventListener("close", forget);
-        opened.addEventListener("versionchange", () => {
-          opened.close();
-          forget();
+  const openDatabase = async (): Promise<IDBDatabase> => {
+    try {
+      return await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = globalThis.indexedDB.open(databaseName, 1);
+        let blocked = false;
+        request.addEventListener("blocked", () => {
+          blocked = true;
+          reject(new Error("Another tab is blocking browser storage."));
         });
-        database = opened;
-        resolve(opened);
+        request.addEventListener("upgradeneeded", () => {
+          request.result.createObjectStore(storeName);
+        });
+        request.addEventListener("error", () => {
+          reject(request.error ?? new Error("Could not open browser storage."));
+        });
+        request.addEventListener("success", () => {
+          const opened = request.result;
+          if (blocked) {
+            opened.close();
+            return;
+          }
+          const forget = (): void => {
+            if (database === opened) {
+              database = null;
+            }
+          };
+          opened.addEventListener("close", forget);
+          opened.addEventListener("versionchange", () => {
+            opened.close();
+            forget();
+          });
+          database = opened;
+          resolve(opened);
+        });
       });
-    }).finally(() => {
+    } finally {
       opening = null;
-    });
+    }
+  };
 
   const transact = async <Result>(
     mode: "readonly" | "readwrite",
@@ -64,6 +73,9 @@ export const createIndexedStore = (databaseName: string, storeName: string) => {
   return {
     read: async (key: string): Promise<unknown> =>
       await transact<unknown>("readonly", (store) => store.get(key)),
+    remove: async (key: string): Promise<void> => {
+      await transact("readwrite", (store) => store.delete(key));
+    },
     write: async (key: string, value: unknown): Promise<void> => {
       await transact("readwrite", (store) => store.put(value, key));
     },

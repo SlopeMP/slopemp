@@ -1825,20 +1825,10 @@ export const registerAudioResource = (
 };
 export const loadAudioResource = async (
   id: string,
-  source: ArrayBuffer | string,
+  data: ArrayBuffer,
   signal?: AbortSignal,
 ): Promise<number> => {
-  const data =
-    typeof source === "string"
-      ? await fetch(source, { signal: signal ?? null }).then(
-          async (response): Promise<ArrayBuffer> => {
-            if (!response.ok) {
-              throw new Error(`Could not load sample (${response.status}).`);
-            }
-            return await response.arrayBuffer();
-          },
-        )
-      : source;
+  signal?.throwIfAborted();
   const context = new AudioContext();
   try {
     const buffer = await context.decodeAudioData(data.slice(0));

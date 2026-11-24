@@ -4,45 +4,39 @@ import { hasAudioResource, removeAudioResource } from "../../src/audio";
 import { required } from "../../src/model";
 import { loadSoundFont } from "../../src/soundfont-loader";
 
-test("SoundFont loads serialize fetching and skip cancelled queued assets", async () => {
+test("SoundFont loads serialize reading and skip cancelled queued assets", async () => {
   const data = await Bun.file(
     new URL("../assets/florestan-subset.sf2", import.meta.url),
   ).arrayBuffer();
-  const originalFetch = globalThis.fetch;
-  const requests: string[] = [];
-  const responses: Array<(response: Response) => void> = [];
-  const ids = ["queued-first", "queued-cancelled", "queued-last"];
+  const reads: string[] = [];
+  const completions: Array<(data: ArrayBuffer) => void> = [];
+  const ids = ["queued-first", "queued-cancelled", "queued-last"] as const;
   const controller = new AbortController();
+  const read = (id: string) => async (): Promise<ArrayBuffer> => {
+    reads.push(id);
+    return await new Promise((resolve) => {
+      completions.push(resolve);
+    });
+  };
+  const [firstId, cancelledId, lastId] = ids;
   try {
-    const fetchFont = async (input: RequestInfo | URL): Promise<Response> => {
-      requests.push(input instanceof Request ? input.url : String(input));
-      return await new Promise<Response>((resolve) => {
-        responses.push(resolve);
-      });
-    };
-    Reflect.set(globalThis, "fetch", fetchFont);
-    const first = loadSoundFont(required(ids[0]), "https://fonts.test/first.sf2");
-    const cancelled = loadSoundFont(
-      required(ids[1]),
-      "https://fonts.test/cancelled.sf2",
-      controller.signal,
-    );
-    const last = loadSoundFont(required(ids[2]), "https://fonts.test/last.sf2");
+    const first = loadSoundFont(firstId, read(firstId));
+    const cancelled = loadSoundFont(cancelledId, read(cancelledId), controller.signal);
+    const last = loadSoundFont(lastId, read(lastId));
     await Promise.resolve();
-    expect(requests).toEqual(["https://fonts.test/first.sf2"]);
+    expect(reads).toEqual([firstId]);
     const reason = new Error("Cancelled queued font");
     const rejected = Promise.allSettled([cancelled]);
     controller.abort(reason);
     expect(await rejected).toEqual([{ status: "rejected", reason }]);
-    required(responses.shift())(new Response(data));
+    required(completions.shift())(data);
     expect((await first).length).toBeGreaterThan(0);
     await Promise.resolve();
-    expect(requests).toEqual(["https://fonts.test/first.sf2", "https://fonts.test/last.sf2"]);
-    required(responses.shift())(new Response(data));
+    expect(reads).toEqual([firstId, lastId]);
+    required(completions.shift())(data);
     expect((await last).length).toBeGreaterThan(0);
-    expect(hasAudioResource(required(ids[1]))).toBe(false);
+    expect(hasAudioResource(cancelledId)).toBe(false);
   } finally {
-    Reflect.set(globalThis, "fetch", originalFetch);
     for (const id of ids) {
       removeAudioResource(id);
     }

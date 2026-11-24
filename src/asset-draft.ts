@@ -1,12 +1,12 @@
 import { batch, createMemo, createSignal, onCleanup } from "solid-js";
 import type { Accessor } from "solid-js";
 
-import { installAudioResourceAlias, loadAudioResource, removeAudioResource } from "./audio";
+import { loadAsset } from "./asset-cache";
+import { installAudioResourceAlias, removeAudioResource } from "./audio";
 import type { Resource } from "./model";
 import { required, uid } from "./model";
 import type { AssetLoadResult, AssetLoadState, AssetView } from "./resource-identity";
 import { assetType, assetView, resourceCacheKey } from "./resource-identity";
-import { loadSoundFont } from "./soundfont-loader";
 
 type PreparedAsset = {
   temporaryId: string;
@@ -30,6 +30,7 @@ export type AssetDraft = {
   move: (index: number, offset: -1 | 1) => void;
   remove: (id: string) => void;
   resolve: () => Promise<boolean>;
+  retry: (entry: Resource) => void;
   rows: Accessor<AssetView[]>;
   update: (id: string, recipe: (entry: Resource) => void) => void;
 };
@@ -129,11 +130,10 @@ export const createAssetDraft = (
     entry: Resource,
     temporaryId: string,
     signal: AbortSignal,
+    retry: boolean,
   ): Promise<void> => {
     try {
-      const result = await (
-        assetType(entry.url) === "soundfont" ? loadSoundFont : loadAudioResource
-      )(temporaryId, entry.url.trim(), signal);
+      const result = await loadAsset(temporaryId, entry.url.trim(), signal, retry);
       if (prepared.get(entry.id)?.temporaryId === temporaryId) {
         update(entry.id, (draft) => {
           draft.metadata = { ...draft.metadata, revision: uid() };
@@ -148,7 +148,7 @@ export const createAssetDraft = (
       }
     }
   };
-  const load = (entry: Resource): void => {
+  const load = (entry: Resource, retry = false): void => {
     if (prepared.has(entry.id)) {
       return;
     }
@@ -162,7 +162,7 @@ export const createAssetDraft = (
     prepared.set(entry.id, {
       temporaryId,
       controller,
-      ready: prepare(entry, temporaryId, controller.signal),
+      ready: prepare(entry, temporaryId, controller.signal, retry),
     });
     update(entry.id, (draft) => {
       draft.url = url;
@@ -174,12 +174,17 @@ export const createAssetDraft = (
       load(entry);
     }
   };
+  const retry = (entry: Resource): void => {
+    discardPrepared(entry.id);
+    load(entry, true);
+  };
   const resolve = async (): Promise<boolean> => {
-    const drafts = entries().filter((entry) => previews().has(entry.id));
     await Promise.all(
-      drafts.map(async (draft) => {
-        load(draft);
-        await prepared.get(draft.id)?.ready;
+      entries().map(async (entry) => {
+        if (previews().get(entry.id)?.status === "unloaded") {
+          load(entry);
+        }
+        await prepared.get(entry.id)?.ready;
       }),
     );
     return !closed && [...previews().values()].every((preview) => preview.status === "ready");
@@ -206,6 +211,7 @@ export const createAssetDraft = (
     move,
     remove,
     resolve,
+    retry,
     rows,
     update,
   };

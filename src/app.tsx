@@ -4,15 +4,11 @@ import type { EditorLockScope } from "@slopemp/song/protocol";
 import { batch, createEffect, createMemo, createSignal, on, onCleanup, onMount } from "solid-js";
 import type { JSX } from "solid-js";
 
+import { loadAsset } from "./asset-cache";
 import { saveAssetFavorites } from "./asset-favorites";
 import { AssetLoads } from "./asset-loads";
 import { AssetPanel } from "./asset-panel";
-import {
-  AudioEngine,
-  installAudioResourceAlias,
-  loadAudioResource,
-  removeAudioResource,
-} from "./audio";
+import { AudioEngine, installAudioResourceAlias, removeAudioResource } from "./audio";
 import { renderMp3, renderWav } from "./audio-export";
 import { createBlankSong } from "./browser-history";
 import type { EditorStartup } from "./browser-history";
@@ -40,9 +36,8 @@ import { keyboardPitch, savePreferences } from "./preferences";
 import type { Preferences } from "./preferences";
 import { PreferencesDialogContent } from "./preferences-dialog";
 import { randomInstrument, randomPreset } from "./random-instruments";
-import { assetType, assetView, resourceCacheKey } from "./resource-identity";
+import { assetView, resourceCacheKey } from "./resource-identity";
 import type { AssetLoadState } from "./resource-identity";
-import { loadSoundFont } from "./soundfont-loader";
 import * as storage from "./storage";
 type Dialog =
   | "assets"
@@ -1722,12 +1717,14 @@ export const App = (initial: EditorStartup): JSX.Element => {
     installAudioResourceAlias(key, id);
     activeResources.set(id, key);
   };
-  const loadAsset = async (resource: Resource, key: string, signal: AbortSignal): Promise<void> => {
+  const loadSongAsset = async (
+    resource: Resource,
+    key: string,
+    signal: AbortSignal,
+  ): Promise<void> => {
     updateAssetState(key, { status: "loading" });
     try {
-      const result = await (
-        assetType(resource.url) === "soundfont" ? loadSoundFont : loadAudioResource
-      )(key, resource.url, signal);
+      const result = await loadAsset(key, resource.url, signal);
       if (signal.aborted) {
         return;
       }
@@ -1774,9 +1771,9 @@ export const App = (initial: EditorStartup): JSX.Element => {
         }
         if (assetStates().get(key)?.status === "ready") {
           activateAsset(resource.id, key);
-        } else if (!resourceLoads.has(key)) {
+        } else if (!assetStates().has(key)) {
           resourceLoads.start(key, async (signal) => {
-            await loadAsset(resource, key, signal);
+            await loadSongAsset(resource, key, signal);
           });
         }
       }

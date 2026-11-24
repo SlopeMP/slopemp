@@ -12,10 +12,7 @@ export type CategoryItem = {
 type DialogCategory = {
   title: string;
   icon?: IconName;
-} & (
-  | { items: CategoryItem[]; itemListClass: string }
-  | { keywords?: string; content: () => JSX.Element }
-);
+} & ({ items: CategoryItem[] } | { keywords?: string; content: () => JSX.Element });
 
 // All category dialogs share navigation, section spacing, search, and scrolling.
 export const CategoryBrowser = (props: {
@@ -63,7 +60,7 @@ export const CategoryBrowser = (props: {
           }
         }}
       />
-      <div class="type-layout">
+      <div class="category-layout">
         <nav class="dialog-tabs" aria-label={props.label}>
           {tabs().map(({ title, icon }) => (
             <button
@@ -97,7 +94,7 @@ export const CategoryBrowser = (props: {
                 <h3>{category.title}</h3>
                 <div class="category-content">
                   {"items" in category ? (
-                    <div class={category.itemListClass}>
+                    <div class="category-items">
                       <For each={category.items.filter((item) => matches(item.label))}>
                         {(item) => item.render()}
                       </For>

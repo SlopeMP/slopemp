@@ -2432,14 +2432,7 @@ const TypeDialog = (props: {
             <Icon name="x" />
           </button>
         </div>
-        <CategoryBrowser
-          label="Instrument categories"
-          filterTabs
-          categories={groups().map((group) => ({
-            ...group,
-            itemListClass: "preset-grid",
-          }))}
-        />{" "}
+        <CategoryBrowser label="Instrument categories" filterTabs categories={groups()} />
       </dialog>
     </div>
   );

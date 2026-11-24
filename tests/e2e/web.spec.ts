@@ -664,6 +664,19 @@ test("control press and release feedback follows pointer and keyboard activation
   await page.keyboard.up("Space");
 });
 
+test("losing window focus clears pressed button feedback", async ({ page }) => {
+  const play = page.getByRole("button", { name: "Play", exact: true });
+  await play.hover();
+  await page.mouse.down();
+  await expect(play).toHaveClass(/\bpressed\b/u);
+  await page.evaluate(() => {
+    globalThis.dispatchEvent(new FocusEvent("blur"));
+  });
+  await expect(play).not.toHaveClass(/\bpressed\b/u);
+  await page.mouse.move(0, 0);
+  await page.mouse.up();
+});
+
 test("transport buttons keep their actions while Ctrl is held", async ({ page }) => {
   const play = page.getByRole("button", { name: "Play", exact: true });
   const pause = page.getByRole("button", { name: "Pause", exact: true });

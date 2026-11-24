@@ -104,6 +104,7 @@ export const installControlInteractions = (): (() => void) => {
   document.addEventListener("keydown", keydown);
   document.addEventListener("keyup", keyup);
   document.addEventListener("blur", blur, true);
+  globalThis.addEventListener("blur", blur);
   return (): void => {
     document.removeEventListener("pointermove", hover);
     document.removeEventListener("pointerover", hover);
@@ -115,5 +116,6 @@ export const installControlInteractions = (): (() => void) => {
     document.removeEventListener("keydown", keydown);
     document.removeEventListener("keyup", keyup);
     document.removeEventListener("blur", blur, true);
+    globalThis.removeEventListener("blur", blur);
   };
 };

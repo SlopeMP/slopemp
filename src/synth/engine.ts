@@ -1071,7 +1071,7 @@ class EnvelopeComputer {
   }
 }
 class Tone {
-  public readonly pitches: number[] = Array<number>(Config.maxChordSize + 2).fill(0);
+  public readonly pitches: number[] = [];
 
   public pitchCount: number = 0;
 
@@ -1121,9 +1121,7 @@ class Tone {
 
   public stringSustainEnd: number = 0;
 
-  public readonly phases = new Float64Array(
-    Math.max(Config.supersawVoiceCount, Config.maxChordSize),
-  );
+  public readonly phases = new Float64Array(Config.supersawVoiceCount);
 
   public readonly phaseDeltas: number[] = [];
 
@@ -1141,9 +1139,7 @@ class Tone {
 
   public expressionDelta: number = 0;
 
-  public readonly prevPitchExpressions: Array<number | null> = Array<null>(
-    Config.maxChordSize,
-  ).fill(null);
+  public readonly prevPitchExpressions: Array<number | null> = [null];
 
   public prevStringDecay: number | null = null;
 
@@ -1193,7 +1189,7 @@ class Tone {
     this.noiseSample = 0;
     this.noiseSampleA = 0;
     this.noiseSampleB = 0;
-    for (let i: number = 0; i < Config.maxChordSize; i++) {
+    for (let i: number = 0; i < this.phases.length; i++) {
       this.phases[i] = 0;
       this.directions[i] = 1;
       this.chipWaveCompletions[i] = 0;
@@ -1372,9 +1368,7 @@ export class Synth {
 
   private readonly tonePool: Tone[] = [];
 
-  private readonly tempMatchedPitchTones: Array<Tone | null> = Array<null>(
-    Config.maxChordSize,
-  ).fill(null);
+  private readonly tempMatchedPitchTones: Array<Tone | null> = [];
 
   public constructor(song: Song) {
     this.song = song;
@@ -2377,6 +2371,9 @@ export class Synth {
   }
 
   private matchTonesByPitch(toneList: Tone[], notePitches: number[]): void {
+    while (this.tempMatchedPitchTones.length < Math.max(notePitches.length, toneList.length)) {
+      this.tempMatchedPitchTones.push(null);
+    }
     let unmatched = 0;
     for (const tone of toneList) {
       const pitch = required(tone.pitches[0]) + tone.lastInterval;
@@ -2722,7 +2719,7 @@ export class Synth {
       tone.reset();
     }
     tone.freshlyAllocated = false;
-    for (let i: number = 0; i < Config.maxChordSize; i++) {
+    for (let i: number = 0; i < tone.phases.length; i++) {
       tone.phaseDeltas[i] = 0;
       tone.phaseDeltaScales[i] = 0;
     }

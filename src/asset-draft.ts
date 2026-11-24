@@ -54,6 +54,7 @@ export const createAssetDraft = (
   );
   const prepared = new Map<string, PreparedAsset>();
   let closed = false;
+  let urlRevision = 0;
 
   const discardPrepared = (id: string): void => {
     const previous = prepared.get(id);
@@ -109,6 +110,7 @@ export const createAssetDraft = (
     if (url === entry.url) {
       return;
     }
+    urlRevision++;
     discardPrepared(entry.id);
     batch(() => {
       setPreview(entry.id, { status: "unloaded" });
@@ -179,6 +181,7 @@ export const createAssetDraft = (
     load(entry, true);
   };
   const resolve = async (): Promise<boolean> => {
+    const revision = urlRevision;
     await Promise.all(
       entries().map(async (entry) => {
         if (previews().get(entry.id)?.status === "unloaded") {
@@ -187,7 +190,11 @@ export const createAssetDraft = (
         await prepared.get(entry.id)?.ready;
       }),
     );
-    return !closed && [...previews().values()].every((preview) => preview.status === "ready");
+    return (
+      !closed &&
+      revision === urlRevision &&
+      [...previews().values()].every((preview) => preview.status === "ready")
+    );
   };
   const installPrepared = (): ReadonlyMap<string, AssetLoadResult> => {
     const loaded = new Map<string, AssetLoadResult>();

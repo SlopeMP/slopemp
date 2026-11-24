@@ -12,6 +12,7 @@ type Props = {
   readonly index: number;
   readonly draft?: AssetDraft;
   readonly disabled?: boolean;
+  readonly urlDisabled?: boolean;
 };
 export const AssetFields = (props: Props): JSX.Element => {
   const { entry, draft } = props;
@@ -23,7 +24,7 @@ export const AssetFields = (props: Props): JSX.Element => {
         placeholder="https://example.com/asset"
         value={entry().url}
         readOnly={draft === undefined}
-        disabled={props.disabled}
+        disabled={props.urlDisabled}
         onInput={(event) => {
           draft?.changeUrl(entry(), event.currentTarget.value);
         }}

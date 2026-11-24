@@ -58,7 +58,13 @@ const FavoriteEditor = (props: EditorProps): JSX.Element => {
           <strong>{entry().name}</strong>
           {entry().status === "loading" && <span class="hint">Loading…</span>}
         </header>
-        <AssetFields entry={entry} index={0} draft={draft} disabled={saving()} />
+        <AssetFields
+          entry={entry}
+          index={0}
+          draft={draft}
+          disabled={saving()}
+          urlDisabled={saving()}
+        />
       </section>
       <div class="dialog-actions asset-dialog-actions">
         <button type="button" class="control" onClick={props.onCancel}>

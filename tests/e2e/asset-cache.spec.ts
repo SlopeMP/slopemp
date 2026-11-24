@@ -107,7 +107,7 @@ test("a broken cached sample can only be repaired with Retry", async ({ page }) 
         const transaction = database.transaction("assets", "readwrite");
         transaction
           .objectStore("assets")
-          .put(new ArrayBuffer(4), new URL(source, document.baseURI).href);
+          .put(new Blob([new Uint8Array(4)]), new URL(source, document.baseURI).href);
         transaction.addEventListener("complete", () => {
           resolve();
         });

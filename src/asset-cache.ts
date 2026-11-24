@@ -16,12 +16,12 @@ const accessCache = async <Result>(access: () => Promise<Result>): Promise<Resul
   }
 };
 
-const download = async (url: string, retry: boolean, signal: AbortSignal): Promise<ArrayBuffer> => {
+const download = async (url: string, retry: boolean, signal: AbortSignal): Promise<Blob> => {
   const response = await fetch(url, { signal, cache: retry ? "reload" : "default" });
   if (!response.ok) {
     throw new Error(`Could not download asset (${response.status}).`);
   }
-  return await response.arrayBuffer();
+  return await response.blob();
 };
 
 const loadAssetData = async (
@@ -37,8 +37,8 @@ const loadAssetData = async (
     if (!retry) {
       const cached = await accessCache(async () => await cache.read(url));
       signal.throwIfAborted();
-      if (cached instanceof ArrayBuffer) {
-        return cached;
+      if (cached instanceof Blob) {
+        return await cached.arrayBuffer();
       }
       if (cached !== undefined) {
         throw new Error(cached === incomplete ? incomplete : "Invalid cached asset data.");
@@ -57,10 +57,11 @@ const loadAssetData = async (
       }
       throw error;
     });
+    // IndexedDB can store large audio blobs without serializing their bytes inline.
     await accessCache(async () => {
       await cache.write(url, data);
     });
-    return data;
+    return await data.arrayBuffer();
   };
 
   // Keep the lookup and the download together so simultaneous loads of the same

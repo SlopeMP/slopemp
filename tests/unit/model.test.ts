@@ -253,7 +253,7 @@ describe("scope and validation regressions", () => {
     required(song.channels[0]).cells[0] = 999;
     expect(() => readSongData(song)).toThrow("arrangement reference");
     required(song.channels[0]).cells[0] = 1;
-    required(required(song.channels[0]).instruments[0]).volume = 2;
+    required(required(song.channels[0]).instruments[0]).volume = 2.51;
     expect(() => readSongData(song)).toThrow();
   });
   test("all structural edits and their undo preserve model invariants", () => {

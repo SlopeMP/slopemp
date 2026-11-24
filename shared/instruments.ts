@@ -11,6 +11,7 @@ const required = <T>(value: T | null | undefined): T => {
 };
 export { PRESET_GROUPS } from "./presets";
 export type { SFModulator } from "./soundfont-types";
+export const MAX_INSTRUMENT_VOLUME = 2.5;
 // Each instrument owns its sound settings and an ordered chain of independent effects.
 // Transition and Chords control articulation outside the audio-effect chain.
 export type ParameterValue = boolean | number | string;
@@ -643,7 +644,7 @@ export const validateInstrument = (candidate: unknown): candidate is Instrument 
     typeof item["volume"] !== "number" ||
     !Number.isFinite(item["volume"]) ||
     item["volume"] < 0 ||
-    item["volume"] > 1
+    item["volume"] > MAX_INSTRUMENT_VOLUME
   ) {
     return false;
   }

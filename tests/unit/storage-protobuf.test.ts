@@ -47,6 +47,7 @@ test("songs round-trip identities, envelope bounds, and SoundFont settings", () 
   required(song.channels[0]).instruments = [instrument];
   const resource = required(song.resources[0]);
   instrument.resourceId = resource.id;
+  instrument.volume = 2.5;
   instrument.bank = 128;
   instrument.program = 8;
   instrument.presetEffects = false;

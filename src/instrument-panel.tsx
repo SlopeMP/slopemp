@@ -47,6 +47,7 @@ import {
   EFFECT_PARAMETERS,
   FM_WAVES,
   INSTRUMENT_TYPES,
+  MAX_INSTRUMENT_VOLUME,
   PRESET_GROUPS,
   presetInstrument,
   validFMGraph,
@@ -3168,7 +3169,7 @@ const InstrumentControls = (
           tooltip="Volume of this instrument in the mix"
           value={Math.round(instrument().volume * 100)}
           min={0}
-          max={100}
+          max={MAX_INSTRUMENT_VOLUME * 100}
           unit="%"
           onPreview={(value) => {
             preview(

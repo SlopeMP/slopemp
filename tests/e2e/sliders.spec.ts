@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   const song = createSong();
   for (const channel of song.channels) {
     channel.instruments = [createInstrument()];
-    required(channel.instruments[0]).volume = 0.5;
+    required(channel.instruments[0]).volume = 1.25;
   }
   await page.goto(`./#${encodeSong(song)}`);
 });
@@ -20,14 +20,35 @@ test("instrument sliders render their rails and centered thumbs", async ({ page 
   await expect(slider).toHaveScreenshot("instrument-volume-slider.png");
   await slider.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(slider).toHaveValue("51");
-  await expect(page.getByRole("spinbutton", { name: "Volume %", exact: true })).toHaveValue("51");
+  await expect(slider).toHaveValue("126");
+  await expect(page.getByRole("spinbutton", { name: "Volume %", exact: true })).toHaveValue("126");
   const bounds = required(await slider.boundingBox());
   await slider.click({ position: { x: bounds.width * 0.75, y: bounds.height / 2 } });
-  await expect(slider).not.toHaveValue("50");
+  await expect(slider).not.toHaveValue("125");
   await expect(page.getByRole("spinbutton", { name: "Volume %", exact: true })).toHaveValue(
     await slider.inputValue(),
   );
+});
+
+test("instrument volume reaches 250% and survives reload", async ({ page }) => {
+  const slider = page.getByRole("slider", { name: "Volume slider", exact: true });
+  const input = page.getByRole("spinbutton", { name: "Volume %", exact: true });
+  await expect(slider).toHaveAttribute("max", "250");
+  await input.fill("200");
+  await input.press("Enter");
+  await expect(slider).toHaveValue("200");
+  await slider.focus();
+  await slider.press("End");
+  await expect(input).toHaveValue("250");
+  await expect
+    .poll(
+      () =>
+        required(required(decodeSong(new URL(page.url()).hash).channels[0]).instruments[0]).volume,
+    )
+    .toBe(2.5);
+  await page.reload();
+  await expect(slider).toHaveValue("250");
+  await expect(input).toHaveValue("250");
 });
 
 test("graph range controls cover the full octave and loop drawing surfaces", async ({ page }) => {

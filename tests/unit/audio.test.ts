@@ -55,6 +55,15 @@ describe("instrument configuration", (): void => {
       expect(required(instrument.operators[1]).customWave[0]).toBe(0);
     }
   });
+  test("instrument volume accepts 0–250% and rejects values outside the range", () => {
+    const instrument = createInstrument();
+    for (const volume of [0, 1, 1.5, 2.5]) {
+      expect(validateInstrument({ ...instrument, volume })).toBe(true);
+    }
+    for (const volume of [-0.01, 2.51, Number.NaN, Infinity]) {
+      expect(validateInstrument({ ...instrument, volume })).toBe(false);
+    }
+  });
   test("presets preserve mix values and identity", (): void => {
     const before = createInstrument();
     before.volume = 0.31;
@@ -321,6 +330,22 @@ describe("automation and synthesis", (): void => {
       const samples = Array.from({ length: 1000 }, (): number => renderer.sample()[0]);
       expect(samples.every(Number.isFinite)).toBe(true);
       expect(rms(samples)).toBeGreaterThan(0.0001);
+    }
+  });
+  test("instrument gain scales audio above 100% across synthesis engines", () => {
+    for (const type of ["chip wave", "FM (n-op)"]) {
+      const song = shortSong();
+      song.channels = song.channels.slice(0, 1);
+      const instrument = createInstrument(type);
+      required(song.channels[0]).instruments = [instrument];
+      const levels = [1, 1.5, 2.5].map((volume) => {
+        instrument.volume = volume;
+        const renderer = new SongRenderer(structuredClone(song), 8000);
+        return rms(Array.from({ length: 1000 }, () => renderer.sample()[0]));
+      });
+      expect(required(levels[0])).toBeGreaterThan(0);
+      expect(required(levels[1]) / required(levels[0])).toBeCloseTo(1.5, 4);
+      expect(required(levels[2]) / required(levels[0])).toBeCloseTo(2.5, 4);
     }
   });
   test("mute silences tracks and Auto mute bypasses processing", (): void => {

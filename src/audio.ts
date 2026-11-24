@@ -2,7 +2,7 @@ import { AudioOutputBuffer } from "./audio-output-buffer";
 import { audioResourceIds } from "./audio-resource-ids";
 import { evaluateLane, prepareLane } from "./automation";
 import { Chorus } from "./chorus";
-import { EFFECT_PARAMETERS, TEMPO_DELAY_EFFECTS } from "./instruments";
+import { EFFECT_PARAMETERS, MAX_INSTRUMENT_VOLUME, TEMPO_DELAY_EFFECTS } from "./instruments";
 import type { Effect, Envelope, Instrument } from "./instruments";
 import { notesTie, required } from "./model";
 import type { AutomationLane, Channel, Note, Song } from "./model";
@@ -3668,7 +3668,7 @@ export class SongRenderer {
     const volume = voice.parameterEnvelopes.has("volume")
       ? voiceParameter("volume", instrument.volume, voice, voice.beatAge, contour.volume)
       : finite(instrument.volume, instrument.volume);
-    let gain = clamp(volume, 0, 1) * 0.15 * contour.volume;
+    let gain = clamp(volume, 0, MAX_INSTRUMENT_VOLUME) * 0.15 * contour.volume;
     gain *= Math.min(1, voice.age / Math.max(0.00001, instrument.attack));
     if (note && instrument.release < 0) {
       let nextBar: number | undefined = this.bar + 1;

@@ -184,14 +184,16 @@ export const prepareSFEnvelope = (
 ): PreparedSFEnvelope => {
   const base = volume ? 33 : 25;
   const sustainValue = g.get(base + 4) ?? 0;
+  // SF2 generator 37 is attenuation from the attack peak. Negative values mean full sustain.
+  const sustainExponent = -Math.max(0, sustainValue) / 200;
   return {
     volume,
     delay: timecentsToSeconds(g.get(base) ?? -12_000),
     attack: timecentsToSeconds(g.get(base + 1) ?? -12_000),
     hold: timecentsToSeconds((g.get(base + 2) ?? -12_000) + (g.get(base + 6) ?? 0) * (60 - key)),
     decay: timecentsToSeconds((g.get(base + 3) ?? -12_000) + (g.get(base + 7) ?? 0) * (60 - key)),
-    sustain: volume ? 10 ** (-sustainValue / 200) : 1 - clip(sustainValue / 1000),
-    sustainExponent: -sustainValue / 200,
+    sustain: volume ? 10 ** sustainExponent : 1 - clip(sustainValue / 1000),
+    sustainExponent,
     release: timecentsToSeconds(g.get(base + 5) ?? -12_000),
   };
 };

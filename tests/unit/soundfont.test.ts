@@ -380,6 +380,43 @@ describe("prepared resource installation", () => {
 });
 
 describe("prepared SoundFont playback", () => {
+  test("negative volume sustain renders like zero attenuation through decay and release", () => {
+    const song = createSong();
+    const channel = required(song.channels[0]);
+    song.channels = [channel];
+    channel.cells[0] = 1;
+    required(channel.patterns[1]).notes = [createNote(0, 2, 60)];
+    const instrument = createInstrument("SoundFont");
+    instrument.presetEffects = false;
+    instrument.release = 1;
+    channel.instruments = [instrument];
+    const render = (sustain: number): Float32Array => {
+      const id = `volume-sustain-${sustain}`;
+      registerSoundFont(
+        id,
+        tinyFont(false, [
+          [36, -3285],
+          [37, sustain],
+          [38, 0],
+          [48, 260],
+        ]),
+      );
+      try {
+        instrument.resourceId = id;
+        const right = new Float32Array(16_000);
+        new SongRenderer(song, 8000).process(new Float32Array(right.length), right);
+        return right;
+      } finally {
+        removeAudioResource(id);
+      }
+    };
+    const fullSustain = render(0);
+    expect(fullSustain.some((sample) => Math.abs(sample) > 0.001)).toBe(true);
+    const negativeSustain = render(-900);
+    expect(negativeSustain.every((sample) => Math.abs(sample) < 1)).toBe(true);
+    expect(negativeSustain).toEqual(fullSustain);
+  });
+
   test("cached preset sends remain silent before onset and reset with the renderer", () => {
     registerSoundFont(
       "preset-send-reset",

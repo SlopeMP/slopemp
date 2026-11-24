@@ -22,7 +22,6 @@ import {
   preparedSFEnvelopeValue,
   prepareSFEnvelope,
   SF2_DEFAULT_GENERATORS,
-  sfEnvelope,
   sfModulatorSource,
   timecentsToSeconds,
 } from "../../src/synth/soundfont";
@@ -169,8 +168,10 @@ describe("native SoundFont envelopes and modulators", (): void => {
     }
     g.set(29, 500);
     g.set(37, 60);
-    expect(sfEnvelope(g, 2, 60, false)).toBe(0.5);
-    expect(sfEnvelope(g, 2, 60, true)).toBeCloseTo(10 ** (-60 / 200));
+    expect(preparedSFEnvelopeValue(prepareSFEnvelope(g, 60, false), 2)).toBe(0.5);
+    expect(preparedSFEnvelopeValue(prepareSFEnvelope(g, 60, true), 2)).toBeCloseTo(
+      10 ** (-60 / 200),
+    );
   });
   test("key-scaled hold timing and releases begin from their current level", (): void => {
     const g = new Map(SF2_DEFAULT_GENERATORS);
@@ -179,9 +180,9 @@ describe("native SoundFont envelopes and modulators", (): void => {
     g.set(27, 0);
     g.set(31, 1200);
     g.set(30, 0);
-    expect(sfEnvelope(g, 0.25, 60, false, 0.25)).toBeCloseTo(0.25);
-    expect(sfEnvelope(g, 0.75, 60, false, 0.25)).toBeCloseTo(0.125);
-    expect(sfEnvelope(g, 1.5, 61, false)).toBe(1);
+    expect(preparedSFEnvelopeValue(prepareSFEnvelope(g, 60, false), 0.25, 0.25)).toBeCloseTo(0.25);
+    expect(preparedSFEnvelopeValue(prepareSFEnvelope(g, 60, false), 0.75, 0.25)).toBeCloseTo(0.125);
+    expect(preparedSFEnvelopeValue(prepareSFEnvelope(g, 61, false), 1.5)).toBe(1);
   });
   test("prepared envelopes preserve native stages and release from an interrupted attack", (): void => {
     const g = new Map(SF2_DEFAULT_GENERATORS);
@@ -211,33 +212,6 @@ describe("native SoundFont envelopes and modulators", (): void => {
     g.set(38, 8000);
     expect(preparedSFEnvelopeValue(volume, 0.5)).toBe(0.5);
     expect(preparedSFEnvelopeValue(volume, 1.5, 0.5)).toBe(0);
-  });
-  test("prepared and native envelopes agree across key scaling, zero stages and releases", (): void => {
-    for (const timing of [-32_768, -12_000, -1200, 1200]) {
-      const g = new Map(SF2_DEFAULT_GENERATORS);
-      for (const base of [25, 33]) {
-        for (let offset = 0; offset < 4; offset++) {
-          g.set(base + offset, timing);
-        }
-        g.set(base + 4, base === 33 ? 360 : 650);
-        g.set(base + 5, timing);
-        g.set(base + 6, 120);
-        g.set(base + 7, -60);
-      }
-      for (const key of [0, 60, 127]) {
-        for (const volume of [false, true]) {
-          const prepared = prepareSFEnvelope(g, key, volume);
-          for (const releasedAt of [undefined, 0, 0.125, 0.75, 4]) {
-            for (const age of [0, 1e-10, 1e-9, 0.001, 0.125, 0.25, 0.75, 1, 2, 4, 12, 120]) {
-              expect(preparedSFEnvelopeValue(prepared, age, releasedAt)).toBeCloseTo(
-                sfEnvelope(g, age, key, volume, releasedAt),
-                12,
-              );
-            }
-          }
-        }
-      }
-    }
   });
 });
 describe("SoundFont import and rendering", (): void => {

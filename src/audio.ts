@@ -21,7 +21,6 @@ import {
   preparedSFEnvelopeValue,
   prepareSFEnvelope,
   SF2_DEFAULT_GENERATORS,
-  sfEnvelope,
   timecentsToSeconds,
 } from "./synth/soundfont";
 import type { PreparedSFEnvelope } from "./synth/soundfont";
@@ -70,15 +69,12 @@ const stagedProgress = (
     );
     const initial = clamp(envelopeNumber(envelope, "initialLevel", 0), 0, 1);
     const terminal = clamp(envelopeNumber(envelope, "terminalLevel", 0), 0, 1);
-    const native = sfEnvelope(effective, time, key, nativeVolume, releasedAt);
+    const prepared = prepareSFEnvelope(effective, key, nativeVolume);
+    const native = preparedSFEnvelopeValue(prepared, time, releasedAt);
     if (releasedAt === undefined || time < releasedAt) {
       return initial + (1 - initial) * native;
     }
-    const progress = clamp(
-      (time - releasedAt) / Math.max(1e-9, timecentsToSeconds(effective.get(base + 5) ?? -12_000)),
-      0,
-      1,
-    );
+    const progress = clamp((time - releasedAt) / Math.max(1e-9, prepared.release), 0, 1);
     let remaining = 1 - progress;
     if (nativeVolume) {
       remaining = progress >= 1 ? 0 : 10 ** (-5 * progress);

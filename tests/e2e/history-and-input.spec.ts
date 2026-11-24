@@ -19,6 +19,7 @@ test("undo stops at the oldest retained browser entry after a long editing sessi
   const tempo = page.getByRole("spinbutton", { name: "Tempo", exact: true });
   for (let index = 1; index <= 70; index++) {
     await tempo.fill(String(150 + index));
+    await tempo.press("Enter");
   }
   const distance = await page.evaluate(() => Math.min(70, globalThis.history.length - 1));
   await page.evaluate((steps) => {
@@ -41,6 +42,7 @@ test("undo and redo traverse browser entries and new edits discard the forward b
   const tempo = page.getByRole("spinbutton", { name: "Tempo", exact: true });
   await page.getByTestId("note-grid").click({ position: { x: 80, y: 100 } });
   await tempo.fill("190");
+  await tempo.press("Enter");
   expect(await page.evaluate(() => globalThis.history.length)).toBe(length + 2);
   await edit(page, "Undo");
   await expect(tempo).toHaveValue("150");
@@ -54,6 +56,7 @@ test("undo and redo traverse browser entries and new edits discard the forward b
   await page.goForward();
   await expect(page.getByTestId("note")).toHaveCount(1);
   await tempo.fill("180");
+  await tempo.press("Enter");
   await expect(
     page.getByRole("combobox", { name: "Edit menu" }).locator('option[value="Redo"]'),
   ).toBeDisabled();
@@ -71,7 +74,9 @@ test("song URLs and JSON exports contain only the current song and share no undo
   await page.goto("./");
   const tempo = page.getByRole("spinbutton", { name: "Tempo", exact: true });
   await tempo.fill("190");
+  await tempo.press("Enter");
   await tempo.fill("180");
+  await tempo.press("Enter");
   const url = page.url();
   const shared = decodeSong(new URL(url).hash);
   expect(shared).toMatchObject({ version: 1, tempo: 180 });
@@ -110,6 +115,7 @@ test("reload retains musical undo and redo while browser navigation retains its 
   await edit(page, "Redo");
   await expect(page.getByTestId("note")).toHaveCount(1);
   await page.getByRole("spinbutton", { name: "Tempo", exact: true }).fill("190");
+  await page.getByRole("spinbutton", { name: "Tempo", exact: true }).press("Enter");
   await expect(page.getByRole("spinbutton", { name: "Tempo", exact: true })).toHaveValue("190");
   await page.goBack();
   await expect(page.getByRole("spinbutton", { name: "Tempo", exact: true })).toHaveValue("150");
@@ -189,8 +195,11 @@ test("recording continues beyond the old song end when additional notes arrive",
 }) => {
   await page.goto("./");
   await page.getByRole("spinbutton", { name: "Song length", exact: true }).fill("1");
+  await page.getByRole("spinbutton", { name: "Song length", exact: true }).press("Enter");
   await page.getByRole("spinbutton", { name: "Beats per bar", exact: true }).fill("1");
+  await page.getByRole("spinbutton", { name: "Beats per bar", exact: true }).press("Enter");
   await page.getByRole("spinbutton", { name: "Tempo", exact: true }).fill("300");
+  await page.getByRole("spinbutton", { name: "Tempo", exact: true }).press("Enter");
   await page.getByRole("button", { name: "Preferences", exact: true }).click();
   await page
     .getByRole("switch", { name: "Count-in one bar of metronome before recording", exact: true })
@@ -249,6 +258,7 @@ test("numeric inputs capture editing keys while Space remains global", async ({ 
   await page.goto("./");
   const tempo = page.getByRole("spinbutton", { name: "Tempo", exact: true });
   await tempo.fill("190");
+  await tempo.press("Enter");
   await tempo.press("ArrowUp");
   await expect(tempo).toHaveValue("191");
   await expect(page.getByTestId("cell-0-0")).toHaveClass(/current/u);
@@ -265,6 +275,7 @@ test("pending session saves retain the committed song during a live preview", as
     }
     field.value = "180";
     field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new FocusEvent("blur"));
     // Let the committed edit publish, keeping the deferred save's timer pending.
     await Promise.resolve();
     const slider = document.querySelector<HTMLInputElement>('input[aria-label="Coarse tempo"]');
@@ -336,7 +347,7 @@ test("SoundFont asset actions retain the selected collection and can reopen", as
   ).toBe("bundled-fluid-r3-mono");
 });
 
-test("structural numeric edits retain focus and apply each typed value", async ({ page }) => {
+test("structural numeric edits retain focus and apply the completed number", async ({ page }) => {
   await page.goto("./");
   await page.getByTestId("cell-0-1").click();
   const length = page.getByRole("spinbutton", { name: "Song length", exact: true });
@@ -350,10 +361,10 @@ test("structural numeric edits retain focus and apply each typed value", async (
   await expect(length).toHaveValue("24");
   await expect(length).toBeFocused();
   expect(await field.evaluate((element) => element.isConnected)).toBe(true);
+  expect(decodeSong(new URL(page.url()).hash).barCount).toBe(16);
+  await length.press("Enter");
   expect(decodeSong(new URL(page.url()).hash).barCount).toBe(24);
   await expect(page.getByTestId("cell-0-1")).toHaveClass(/current/u);
-  await edit(page, "Undo");
-  await expect(length).toHaveValue("2");
   await edit(page, "Undo");
   await expect(length).toHaveValue("16");
 });

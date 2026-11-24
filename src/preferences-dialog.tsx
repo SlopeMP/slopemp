@@ -1,7 +1,7 @@
 import type { JSX } from "solid-js";
 
 import { CategoryBrowser } from "./category-browser";
-import { NumericControl, SelectWrap, Setting, ToggleControl } from "./editors";
+import { NumericControl, NumericInput, SelectWrap, Setting, ToggleControl } from "./editors";
 import { Icon } from "./icons";
 import { KeyBindingsEditor } from "./keybinding-editor";
 import { createDefaultKeyBindings } from "./keybindings";
@@ -86,16 +86,15 @@ export const PreferencesDialogContent = (props: {
               label="Audio Threads"
               tooltip="Maximum audio processing threads. Tracks and automation share threads up to this limit."
             >
-              <input
+              <NumericInput
                 aria-label="Audio Threads"
                 class="control"
-                type="number"
                 min={1}
                 max={MAX_AUDIO_THREADS}
                 step={1}
                 value={props.prefs.audioThreads}
-                onInput={(event) => {
-                  props.onChange("audioThreads", normalizeAudioThreads(Number(event.target.value)));
+                onCommit={(value) => {
+                  props.onChange("audioThreads", normalizeAudioThreads(value));
                 }}
               />
             </Setting>

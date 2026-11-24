@@ -18,6 +18,7 @@ import {
   FilterEditor,
   GraphControl,
   NumericControl,
+  NumericInput,
   SelectControl,
   selectValueRef,
   SelectWrap,
@@ -2837,17 +2838,15 @@ const AutomationEditor = (props: {
                     const pointIndex = createMemo(() => Number(pointEntry()[0]));
                     return (
                       <div class="automation-point">
-                        <input
+                        <NumericInput
                           class="control numeric"
-                          type="number"
                           aria-label={`Point ${pointIndex() + 1} beat`}
                           title="Beat where this change happens"
                           min={0}
                           max={props.song.beatsPerBar}
                           step={1 / 24}
                           value={pointEntry()[1].time}
-                          onInput={(event) => {
-                            const value = event.target.valueAsNumber;
+                          onCommit={(value) => {
                             if (Number.isFinite(value)) {
                               update(index, (target) => {
                                 const item = target.points[pointIndex()];
@@ -2859,17 +2858,15 @@ const AutomationEditor = (props: {
                             }
                           }}
                         />
-                        <input
+                        <NumericInput
                           class="control numeric"
-                          type="number"
                           aria-label={`Point ${pointIndex() + 1} value`}
                           title="Setting reached at this point"
                           min={min()}
                           max={max()}
                           step={0.01}
                           value={pointEntry()[1].value}
-                          onInput={(event) => {
-                            const value = event.target.valueAsNumber;
+                          onCommit={(value) => {
                             if (Number.isFinite(value)) {
                               update(index, (target) => {
                                 const item = target.points[pointIndex()];

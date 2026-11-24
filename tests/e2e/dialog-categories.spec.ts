@@ -127,6 +127,8 @@ test("dialog inputs keep focus while preferences and asset drafts update", async
   await expect(rootKey).toHaveValue("72");
   for (const input of ["128", "129"]) {
     await rootKey.fill(input);
+    await expect(rootKey).toHaveValue(input);
+    await rootKey.press("Enter");
     await expect(rootKey).toHaveValue("127");
   }
   await dialog.getByRole("button", { name: "Close dialog", exact: true }).click();

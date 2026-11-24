@@ -83,6 +83,7 @@ for (const action of ["add a note", "change tempo"] as const) {
       await expect(notes).toHaveCount(before + 1);
     } else {
       await tempo.fill("211");
+      await tempo.press("Enter");
       await expect(tempo).toHaveValue("211");
     }
     await flush(page);
@@ -198,6 +199,7 @@ test("an aborted autosave preserves the last durable song and later edits can sa
     document.documentElement.dataset["abortSessionWrite"] = "true";
   });
   await tempo.fill("169");
+  await tempo.press("Enter");
   await flush(page);
   await expect(page.getByRole("status")).toContainText("Browser storage is unavailable");
   await expect(tempo).toHaveValue("169");
@@ -207,6 +209,7 @@ test("an aborted autosave preserves the last durable song and later edits can sa
     delete document.documentElement.dataset["abortSessionWrite"];
   });
   await tempo.fill("172");
+  await tempo.press("Enter");
   await flush(page);
   await expect.poll(async () => await storedTempo(page)).toBe(172);
   const reopened = await page.context().newPage();
@@ -218,6 +221,7 @@ test("leaving the editor flushes the most recent committed edit", async ({ page 
   await seedStorage(page, { preferences: { songInUrl: false } });
   await page.goto("./");
   await page.getByRole("spinbutton", { name: "Tempo", exact: true }).fill("176");
+  await page.getByRole("spinbutton", { name: "Tempo", exact: true }).press("Enter");
   await page.goto("./?fresh");
   await expect(page.getByRole("spinbutton", { name: "Tempo", exact: true })).toHaveValue("176");
 });
@@ -266,6 +270,7 @@ test("corrupt session data remains available for diagnosis until the first delib
   await flush(page);
   expect(await readStoredState(page, "session")).toEqual(corrupt);
   await page.getByRole("spinbutton", { name: "Tempo", exact: true }).fill("171");
+  await page.getByRole("spinbutton", { name: "Tempo", exact: true }).press("Enter");
   await flush(page);
   await expect.poll(async () => await storedTempo(page)).toBe(171);
 });
@@ -280,8 +285,10 @@ test("browser history write denial preserves editing and in-memory undo/redo", a
   const tempo = page.getByRole("spinbutton", { name: "Tempo", exact: true });
   const edit = page.getByRole("combobox", { name: "Edit menu", exact: true });
   await tempo.fill("180");
+  await tempo.press("Enter");
   await expect(page.getByRole("status")).toContainText("could not save editing history");
   await tempo.fill("190");
+  await tempo.press("Enter");
   await edit.selectOption("Undo");
   await expect(tempo).toHaveValue("180");
   await edit.selectOption("Undo");
@@ -296,6 +303,7 @@ test("a corrupt browser history destination cannot replace the current edit", as
   await page.goto("./");
   const tempo = page.getByRole("spinbutton", { name: "Tempo", exact: true });
   await tempo.fill("184");
+  await tempo.press("Enter");
   await page.evaluate(() => {
     history.replaceState({ slopemp: { data: "corrupt" } }, "", "#corrupt");
     globalThis.dispatchEvent(new PopStateEvent("popstate"));

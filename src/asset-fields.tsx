@@ -3,7 +3,7 @@ import { createMemo } from "solid-js";
 import type { Accessor, JSX } from "solid-js";
 
 import type { AssetDraft } from "./asset-draft";
-import { SelectWrap } from "./editors";
+import { NumericInput, SelectWrap } from "./editors";
 import { Icon } from "./icons";
 import type { AssetView } from "./resource-identity";
 
@@ -87,24 +87,18 @@ export const AssetFields = (props: Props): JSX.Element => {
                 <label for={`resource-${key}-${entry().id}`} title={tooltip}>
                   {label}
                 </label>
-                <input
+                <NumericInput
                   id={`resource-${key}-${entry().id}`}
                   class="control numeric"
                   aria-label={`${entry().name} ${label}`}
-                  type="number"
                   min={min}
                   max={maximum()}
                   value={value()}
                   readOnly={draft === undefined}
                   disabled={props.disabled}
-                  onInput={(e) => {
-                    const field = e.currentTarget;
-                    const input = field.valueAsNumber;
+                  onCommit={(input) => {
                     if (Number.isFinite(input)) {
                       const clamped = Math.max(min, Math.min(maximum(), input));
-                      if (input !== clamped) {
-                        field.valueAsNumber = clamped;
-                      }
                       draft?.update(entry().id, (v) => {
                         v[key] = clamped;
                       });

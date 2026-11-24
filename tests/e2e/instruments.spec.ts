@@ -33,6 +33,7 @@ test("instrument preset browsing preserves mix volume and cancellation preserves
   const panel = page.getByRole("region", { name: "Instrument Settings", exact: true });
   const volume = panel.getByRole("spinbutton", { name: "Volume %", exact: true });
   await volume.fill("37");
+  await volume.press("Enter");
   await page.locator(".instrument-panel .type-button").click();
   const dialog = page.getByRole("dialog", { name: "Choose instrument type" });
   await expect(dialog.locator("button .tabler-icon-leading")).toHaveCount(0);
@@ -91,8 +92,10 @@ test("FM replaces the oscillator type and keeps independent custom cycles and tu
   const fm = page.locator(".fm-editor");
   const first = fm.getByRole("region", { name: "Operator 1", exact: true });
   await first.getByRole("spinbutton", { name: "Coarse semitones", exact: true }).fill("-12");
+  await first.getByRole("spinbutton", { name: "Coarse semitones", exact: true }).press("Enter");
   const second = fm.getByRole("region", { name: "Operator 2", exact: true });
   await second.getByRole("spinbutton", { name: "Amplitude %", exact: true }).fill("63");
+  await second.getByRole("spinbutton", { name: "Amplitude %", exact: true }).press("Enter");
   await second.getByRole("combobox", { name: "Wave", exact: true }).selectOption("Custom");
   const drawing = second.getByRole("button", { name: "Operator 2 Custom wave", exact: true });
   await drawing.focus();
@@ -135,6 +138,7 @@ test("Quick Effects repeat independently and Monoize has no parameters", async (
     .locator(".effect-card")
     .filter({ has: page.getByRole("heading", { name: "Echo", exact: true }) });
   await cards.first().getByRole("spinbutton", { name: "Feedback %", exact: true }).fill("62");
+  await cards.first().getByRole("spinbutton", { name: "Feedback %", exact: true }).press("Enter");
   const paste = panel.getByRole("button", { name: "Paste Effect", exact: true });
   await expect(paste).toBeDisabled();
   await cards.first().getByRole("button", { name: "Copy Echo", exact: true }).click();
@@ -145,6 +149,7 @@ test("Quick Effects repeat independently and Monoize has no parameters", async (
     cards.last().getByRole("spinbutton", { name: "Feedback %", exact: true }),
   ).toHaveValue("62");
   await cards.last().getByRole("spinbutton", { name: "Feedback %", exact: true }).fill("17");
+  await cards.last().getByRole("spinbutton", { name: "Feedback %", exact: true }).press("Enter");
   await expect(
     cards.first().getByRole("spinbutton", { name: "Feedback %", exact: true }),
   ).toHaveValue("62");
@@ -249,18 +254,27 @@ test("FM exposes wave controls and numeric sliders with persistent operator sett
   await expect(first.getByRole("slider")).toHaveCount(9);
   await expect(first.getByRole("spinbutton")).toHaveCount(9);
   await first.getByRole("spinbutton", { name: "Ratio", exact: true }).fill("0.375");
+  await first.getByRole("spinbutton", { name: "Ratio", exact: true }).press("Enter");
   await first.getByRole("spinbutton", { name: "Offset Hz", exact: true }).fill("-1.3");
+  await first.getByRole("spinbutton", { name: "Offset Hz", exact: true }).press("Enter");
   await first.getByRole("spinbutton", { name: "Coarse semitones", exact: true }).fill("-12");
+  await first.getByRole("spinbutton", { name: "Coarse semitones", exact: true }).press("Enter");
   await first.getByRole("spinbutton", { name: "Fine cents", exact: true }).fill("27");
+  await first.getByRole("spinbutton", { name: "Fine cents", exact: true }).press("Enter");
   await first.getByRole("spinbutton", { name: "Pan %", exact: true }).fill("-35");
+  await first.getByRole("spinbutton", { name: "Pan %", exact: true }).press("Enter");
   await first.getByRole("spinbutton", { name: "Phase °", exact: true }).fill("120");
+  await first.getByRole("spinbutton", { name: "Phase °", exact: true }).press("Enter");
   await first.getByRole("spinbutton", { name: "Stereo phase °", exact: true }).fill("-90");
+  await first.getByRole("spinbutton", { name: "Stereo phase °", exact: true }).press("Enter");
   await first.getByRole("spinbutton", { name: "Stereo detune cents", exact: true }).fill("24");
+  await first.getByRole("spinbutton", { name: "Stereo detune cents", exact: true }).press("Enter");
   await first.getByRole("switch", { name: "Invert", exact: true }).check();
   await first.getByRole("combobox", { name: "Wave", exact: true }).selectOption("pulse width");
   const width = first.getByRole("spinbutton", { name: "Pulse Width %", exact: true });
   await expect(width).toBeVisible();
   await width.fill("37.5");
+  await width.press("Enter");
   const amplitude = first.getByRole("slider", { name: "Amplitude slider", exact: true });
   await amplitude.focus();
   await amplitude.press("Home");
@@ -269,6 +283,7 @@ test("FM exposes wave controls and numeric sliders with persistent operator sett
     "1",
   );
   await fm.getByRole("spinbutton", { name: "Phase Randomness %", exact: true }).fill("42");
+  await fm.getByRole("spinbutton", { name: "Phase Randomness %", exact: true }).press("Enter");
   await page.getByRole("button", { name: "Add envelope", exact: true }).click();
   const target = page.locator(".envelope-section").last().getByRole("combobox").first();
   await expect(target.locator("option").filter({ hasText: "Operator 1 stereoDetune" })).toHaveCount(
@@ -378,6 +393,7 @@ test("Automation lane targets can be changed independently and rebound after eff
   page,
 }) => {
   await page.getByRole("spinbutton", { name: "Automations", exact: true }).fill("1");
+  await page.getByRole("spinbutton", { name: "Automations", exact: true }).press("Enter");
   await page.getByTestId("cell-3-4").click();
   const panel = page.getByRole("region", { name: "Automation Settings", exact: true });
   const addLane = panel.getByRole("button", { name: "Add automation lane", exact: true });
@@ -388,6 +404,7 @@ test("Automation lane targets can be changed independently and rebound after eff
   await firstTarget.selectOption("tempo");
   await expect(page.getByTestId("cell-3-4")).toHaveAccessibleName(/bar 5, pattern [1-9]/u);
   await panel.getByRole("spinbutton", { name: "Point 1 value", exact: true }).fill("210");
+  await panel.getByRole("spinbutton", { name: "Point 1 value", exact: true }).press("Enter");
   await page.getByTestId("cell-3-0").click();
   await expect(lanes).toHaveCount(0);
   await page.getByTestId("cell-3-4").click();
@@ -433,6 +450,7 @@ test("ordinary staged envelopes retain native SF2 timing and sustain units", asy
     .getByRole("combobox", { name: "Envelope 1 type", exact: true })
     .selectOption("Staged / SF2");
   await envelope.getByRole("spinbutton", { name: "Attack s", exact: true }).fill("1");
+  await envelope.getByRole("spinbutton", { name: "Attack s", exact: true }).press("Enter");
   await envelope
     .getByRole("combobox", { name: "Envelope law", exact: true })
     .selectOption("SF2 volume");
@@ -440,11 +458,14 @@ test("ordinary staged envelopes retain native SF2 timing and sustain units", asy
     envelope.getByRole("spinbutton", { name: "Attack timecents", exact: true }),
   ).toHaveValue("0");
   await envelope.getByRole("spinbutton", { name: "Delay timecents", exact: true }).fill("-32768");
+  await envelope.getByRole("spinbutton", { name: "Delay timecents", exact: true }).press("Enter");
   await envelope.getByRole("spinbutton", { name: "Sustain centibels", exact: true }).fill("200");
+  await envelope.getByRole("spinbutton", { name: "Sustain centibels", exact: true }).press("Enter");
   await envelope.getByText("Envelope modulators (0)", { exact: true }).click();
   await envelope.getByRole("button", { name: "Add envelope modulator", exact: true }).click();
   await envelope.getByRole("combobox", { name: "Destination", exact: true }).selectOption("35");
   await envelope.getByRole("spinbutton", { name: "Amount", exact: true }).fill("120");
+  await envelope.getByRole("spinbutton", { name: "Amount", exact: true }).press("Enter");
   await page.reload();
   await envelope.getByRole("button", { name: "Expand envelope 1", exact: true }).click();
   await expect(envelope.getByRole("combobox", { name: "Envelope law", exact: true })).toHaveValue(
@@ -646,6 +667,7 @@ for (const type of ["Echo", "Ping Pong Delay", "Multitap Delay"]) {
     const timing = card.getByRole("combobox", { name: "Timing", exact: true });
     await expect(timing).toHaveValue("Seconds");
     await card.getByRole("spinbutton", { name: "Time s", exact: true }).fill("0.5");
+    await card.getByRole("spinbutton", { name: "Time s", exact: true }).press("Enter");
     await timing.selectOption("Beats");
     await expect(card.getByRole("spinbutton", { name: "Time beats", exact: true })).toHaveValue(
       "0.5",

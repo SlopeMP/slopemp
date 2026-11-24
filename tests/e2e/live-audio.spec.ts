@@ -156,6 +156,7 @@ for (const native of [false, true]) {
       .getByRole("spinbutton", { name: "Volume %", exact: true });
     for (const value of ["60", "80", "70"]) {
       await volume.fill(value);
+      await volume.press("Enter");
       await expect(volume).toHaveValue(value);
     }
     await page.evaluate(() => {
@@ -207,6 +208,7 @@ for (const native of [false, true]) {
     const volume = panel.getByRole("spinbutton", { name: "Volume %", exact: true });
     for (const value of ["60", "80", "70"]) {
       await volume.fill(value);
+      await volume.press("Enter");
       await expect(volume).toHaveValue(value);
       await expectAudible(page);
     }

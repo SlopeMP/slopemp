@@ -51,6 +51,7 @@ test("the touch pattern picker keeps the assigned pattern when the limit changes
   await expect(pattern).toHaveValue("3");
 
   await page.getByRole("spinbutton", { name: "Max patterns", exact: true }).fill("9");
+  await page.getByRole("spinbutton", { name: "Max patterns", exact: true }).press("Enter");
   await expect(pattern.locator("option")).toHaveCount(10);
   await expect(pattern).toHaveValue("3");
 

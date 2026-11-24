@@ -129,6 +129,7 @@ test("favorite assets persist independently and are copied into new songs", asyn
   const favoriteRoot = favorites.getByRole("spinbutton", { name: "piano-C4 Root MIDI key" });
   await expect(favoriteRoot).toHaveValue("60");
   await favoriteRoot.fill("67");
+  await favoriteRoot.press("Enter");
   await favorites.getByRole("button", { name: "Save Favorite", exact: true }).click();
   await expect(editFavorite("piano-C4")).toBeVisible();
   expect(songAsset(piano.url)).toMatchObject({ id: piano.id, rootKey: 60 });
@@ -148,6 +149,7 @@ test("favorite assets persist independently and are copied into new songs", asyn
   const songRoot = pianoRow.getByRole("spinbutton", { name: "piano-C4 Root MIDI key" });
   await expect(songRoot).toHaveValue("67");
   await songRoot.fill("69");
+  await songRoot.press("Enter");
   await addAssets.getByRole("button", { name: "Okay", exact: true }).click();
   await expect(addAssets).toBeHidden();
   const insertedPiano = required(songAsset(piano.url));

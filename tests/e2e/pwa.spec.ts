@@ -124,6 +124,7 @@ for (const missingAsset of [false, true]) {
         .toBe("activated");
       const tempo = page.getByRole("spinbutton", { name: "Tempo", exact: true });
       await tempo.fill("173");
+      await tempo.press("Enter");
       await page.getByTestId("note-grid").click({ position: { x: 80, y: 100 } });
       const songURL = page.url();
       const other = await context.newPage();

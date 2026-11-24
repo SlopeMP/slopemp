@@ -110,6 +110,7 @@ test("adding a track shares used SoundFonts and excludes unused fonts from audio
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await expectAudible(page);
   await page.getByRole("spinbutton", { name: "Tracks", exact: true }).fill("2");
+  await page.getByRole("spinbutton", { name: "Tracks", exact: true }).press("Enter");
   await expect
     .poll(
       async () =>
@@ -179,6 +180,7 @@ test("audio thread limits apply during playback and persist locally without edit
   await expect(threads).toHaveAttribute("max", "16");
   for (const value of ["1", "3", "2"]) {
     await threads.fill(value);
+    await threads.press("Enter");
     await expect(threads).toHaveValue(value);
     await expect
       .poll(

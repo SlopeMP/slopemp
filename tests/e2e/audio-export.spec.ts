@@ -169,6 +169,7 @@ for (const format of ["wav", "mp3"]) {
       .getByRole("region", { name: "Instrument Settings", exact: true })
       .getByRole("spinbutton", { name: "Volume %", exact: true });
     await volume.fill("30");
+    await volume.press("Enter");
     await expect(volume).toHaveValue("30");
     required(required(song.channels[0]).instruments[0]).volume = 0.3;
     await expect
@@ -192,6 +193,7 @@ for (const format of ["wav", "mp3"]) {
     await page.getByRole("checkbox", { name: "Intro", exact: true }).check();
     await page.getByRole("checkbox", { name: "Outro", exact: true }).check();
     await page.getByRole("spinbutton", { name: "Loop Count", exact: true }).fill("2");
+    await page.getByRole("spinbutton", { name: "Loop Count", exact: true }).press("Enter");
     await page.getByRole("button", { name: "Export", exact: true }).click();
     await expect(page.getByRole("button", { name: "Save File", exact: true })).toBeEnabled();
     await expect(
@@ -307,6 +309,7 @@ test("cancelling accelerated synthesis terminates export and leaves the editor u
   await expect(page.getByText(/Export failed:/u)).not.toBeVisible();
   expect(decodeSong(await page.evaluate(() => location.hash))).toEqual(song);
   await page.getByRole("spinbutton", { name: "Tempo", exact: true }).fill("120");
+  await page.getByRole("spinbutton", { name: "Tempo", exact: true }).press("Enter");
   await expect(page.getByRole("spinbutton", { name: "Tempo", exact: true })).toHaveValue("120");
   song.tempo = 120;
   await expect.poll(async () => decodeSong(await page.evaluate(() => location.hash))).toEqual(song);

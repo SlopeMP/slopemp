@@ -97,3 +97,11 @@ test("plain native export avoids worker overhead while respecting the configured
   expect(worker).not.toHaveBeenCalled();
   expect(result.buffer.byteLength).toBe(44 + 1600 * 4);
 });
+
+test("1 BPM audio export completes the full minute-long beat", async () => {
+  const song = fixture();
+  song.tempo = 1;
+  const blob = await renderWav(song, { sampleRate: 8000, loopCount: 1 });
+  const data = new DataView(await blob.arrayBuffer());
+  expect(data.getUint32(40, true)).toBe(60 * 8000 * 4);
+});

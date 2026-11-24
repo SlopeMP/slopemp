@@ -15,7 +15,7 @@ import type { EditorStartup } from "./browser-history";
 import { ChannelEditor } from "./channel-editor";
 import { DeferredTask } from "./deferred-task";
 import { colorsForChannel } from "./editor-geometry";
-import { DrawingLock, SelectWrap, Setting } from "./editors";
+import { DrawingLock, NumericInput, SelectWrap, Setting } from "./editors";
 import * as formats from "./formats";
 import { HelpDialogContent } from "./help-dialog";
 import { Icon } from "./icons";
@@ -1239,21 +1239,20 @@ export const App = (initial: EditorStartup): JSX.Element => {
     max?: number;
   }): JSX.Element => (
     <Setting label={props.label} tooltip={numberHelp[props.label]}>
-      <input
+      <NumericInput
         class="control numeric"
         aria-label={props.label}
-        type="number"
         value={props.value}
         min={props.min}
         max={props.max}
         disabled={disabled()}
-        onInput={(e) => {
+        onCommit={(value) => {
           edit((s) => {
             props.apply(
               s,
               Math.max(
                 props.min,
-                Math.min(props.max ?? Number.MAX_SAFE_INTEGER, Math.round(Number(e.target.value))),
+                Math.min(props.max ?? Number.MAX_SAFE_INTEGER, Math.round(value)),
               ),
             );
           });
@@ -2256,17 +2255,16 @@ export const App = (initial: EditorStartup): JSX.Element => {
                         history.cancelPreview();
                       }}
                     />
-                    <input
+                    <NumericInput
                       class="control numeric"
                       aria-label="Tempo"
-                      type="number"
                       min={1}
                       max={300}
                       value={song().tempo}
                       disabled={disabled()}
-                      onInput={(e) => {
+                      onCommit={(value) => {
                         edit((s) => {
-                          s.tempo = clamp(Math.round(Number(e.target.value)), 1, 300);
+                          s.tempo = clamp(Math.round(value), 1, 300);
                         });
                       }}
                     />
@@ -2644,18 +2642,15 @@ export const App = (initial: EditorStartup): JSX.Element => {
             {dialog() === "sideways" && (
               <>
                 <Setting label="Beat offset" tooltip="Move notes earlier or later">
-                  <input
+                  <NumericInput
                     class="control numeric"
                     aria-label="Beat offset"
-                    type="number"
                     min={-song().beatsPerBar}
                     max={song().beatsPerBar}
                     step={1 / 24}
                     value={offset()}
-                    onInput={(e) => {
-                      setOffset(
-                        clamp(Number(e.target.value), -song().beatsPerBar, song().beatsPerBar),
-                      );
+                    onCommit={(value) => {
+                      setOffset(clamp(value, -song().beatsPerBar, song().beatsPerBar));
                     }}
                   />
                 </Setting>
@@ -2741,15 +2736,14 @@ export const App = (initial: EditorStartup): JSX.Element => {
                     </label>
                     <label title="Set how many times the loop repeats in the export">
                       Loop Count{" "}
-                      <input
+                      <NumericInput
                         class="control numeric"
                         aria-label="Loop Count"
-                        type="number"
                         min={1}
                         max={4}
                         value={loopCount()}
-                        onInput={(e) => {
-                          setLoopCount(clamp(Number(e.target.value), 1, 4));
+                        onCommit={(value) => {
+                          setLoopCount(clamp(value, 1, 4));
                         }}
                       />
                     </label>

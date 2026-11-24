@@ -245,6 +245,7 @@ test("structure edits clamp meter, repair references, and undo shrinking preserv
 }) => {
   await gridClick(page, 0.8, 0.5);
   await page.getByRole("spinbutton", { name: "Beats per bar", exact: true }).fill("2");
+  await page.getByRole("spinbutton", { name: "Beats per bar", exact: true }).press("Enter");
   let song = await saved(page);
   expect(song.beatsPerBar).toBe(2);
   expect(requireValue(requireValue(song.channels[0]).patterns[1]).notes).toHaveLength(0);
@@ -253,6 +254,7 @@ test("structure edits clamp meter, repair references, and undo shrinking preserv
   expect(song.beatsPerBar).toBe(8);
   expect(requireValue(requireValue(song.channels[0]).patterns[1]).notes).toHaveLength(1);
   await page.getByRole("spinbutton", { name: "Song length", exact: true }).fill("2");
+  await page.getByRole("spinbutton", { name: "Song length", exact: true }).press("Enter");
   song = await saved(page);
   expect(song.loopEnd).toBeLessThanOrEqual(2);
   expect(song.channels.every((t) => t.cells.length === 2)).toBe(true);
@@ -297,6 +299,7 @@ test("preferences apply immediately, persist separately from song, and do not cl
   await page.getByRole("button", { name: "Preferences", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Preferences" });
   await dialog.getByRole("spinbutton", { name: "Volume", exact: true }).fill("35");
+  await dialog.getByRole("spinbutton", { name: "Volume", exact: true }).press("Enter");
   await expect(dialog.getByRole("slider", { name: "Volume slider", exact: true })).toHaveValue(
     "35",
   );
@@ -342,8 +345,11 @@ test("auto-follow permits browsing until a bar boundary and scrolls the playing 
   page,
 }) => {
   await page.getByRole("spinbutton", { name: "Song length", exact: true }).fill("64");
+  await page.getByRole("spinbutton", { name: "Song length", exact: true }).press("Enter");
   await page.getByRole("spinbutton", { name: "Tempo", exact: true }).fill("120");
+  await page.getByRole("spinbutton", { name: "Tempo", exact: true }).press("Enter");
   await page.getByRole("spinbutton", { name: "Beats per bar", exact: true }).fill("4");
+  await page.getByRole("spinbutton", { name: "Beats per bar", exact: true }).press("Enter");
   const song = await saved(page);
   song.loopEnd = song.barCount;
   await page.goto(`./#${encodeSong(song)}`);
@@ -423,6 +429,7 @@ test("Binary song export uses finite loop choices, downloads and can be imported
   await command(page, "Export Song");
   await page.getByRole("combobox", { name: "File Type", exact: true }).selectOption("slopemp");
   await page.getByRole("spinbutton", { name: "Loop Count", exact: true }).fill("2");
+  await page.getByRole("spinbutton", { name: "Loop Count", exact: true }).press("Enter");
   const waiting = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const file = await waiting;

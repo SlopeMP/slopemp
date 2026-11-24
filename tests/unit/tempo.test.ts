@@ -12,7 +12,9 @@ test("songs accept and preserve tempos down to 1 BPM", () => {
   expect(decodeSong(encodeSong(song)).tempo).toBe(1);
   expect(evaluateAutomation(song, 0, 0).tempo).toBe(1);
   song.tempo = 0;
-  expect(() => validateSong(song)).toThrow("Invalid tempo");
+  expect(() => {
+    validateSong(song);
+  }).toThrow("Invalid tempo");
 });
 
 test("tempo automation can reach 1 BPM", () => {

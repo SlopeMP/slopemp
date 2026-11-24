@@ -116,6 +116,63 @@ export const SelectControl = (props: {
     </div>
   );
 };
+// Keep the browser's editing buffer intact until the user commits the whole number.
+export const NumericInput = (
+  props: Omit<
+    ComponentProps<"input">,
+    "onBlur" | "onChange" | "onInput" | "onKeyDown" | "ref" | "type" | "value"
+  > & {
+    readonly value: number | string | undefined;
+    readonly onCommit: (value: number) => void;
+  },
+): JSX.Element => {
+  const [local, input] = splitProps(props, ["value", "onCommit"]);
+  const [editing, setEditing] = createSignal(false);
+  let field: HTMLInputElement | null = null;
+  const reset = (): void => {
+    setEditing(false);
+    if (field) {
+      field.value = String(local.value ?? "");
+    }
+  };
+  const commit = (): void => {
+    if (editing() && field && Number.isFinite(field.valueAsNumber)) {
+      local.onCommit(field.valueAsNumber);
+    }
+    reset();
+  };
+  createEffect(() => {
+    if (!editing()) {
+      if (field) {
+        field.value = String(local.value ?? "");
+      }
+    }
+  });
+  return (
+    <input
+      {...input}
+      ref={(element) => {
+        field = element;
+      }}
+      type="number"
+      onInput={() => {
+        setEditing(true);
+      }}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.key === "Enter") {
+            commit();
+          } else {
+            reset();
+          }
+        }
+      }}
+    />
+  );
+};
 export const NumericControl = (props: {
   readonly label: string;
   readonly value: number;
@@ -164,20 +221,16 @@ export const NumericControl = (props: {
             setDraft(null);
           }}
         />
-        <input
+        <NumericInput
           class="control numeric"
           id={id}
-          type="number"
           min={Number.isFinite(props.min) ? props.min : undefined}
           max={Number.isFinite(props.max) ? props.max : undefined}
           step={props.step ?? 1}
           value={Number.isFinite(shown()) ? shown() : String(shown())}
           disabled={props.disabled ?? false}
-          onInput={(event) => {
-            const next = event.currentTarget.valueAsNumber;
-            if (Number.isFinite(next)) {
-              props.onChange(clamp(next, props.min, props.max));
-            }
+          onCommit={(value) => {
+            props.onChange(clamp(value, props.min, props.max));
           }}
         />
       </div>

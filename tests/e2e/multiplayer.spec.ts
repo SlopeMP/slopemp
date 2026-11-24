@@ -67,6 +67,7 @@ test("joins only on request, shares edits and selections, and disconnects to loc
     await expect(collaborator.getByTestId("cell-1-2").getByTitle("You")).toBeVisible();
 
     await tempo(page).fill("160");
+    await tempo(page).press("Enter");
     await expect(tempo(collaborator)).toHaveValue("160");
     const keys = collaborator.getByRole("combobox", { name: "Key", exact: true });
     await keys.selectOption("4");
@@ -86,6 +87,7 @@ test("joins only on request, shares edits and selections, and disconnects to loc
     await dismiss(page);
     await expect(tempo(page)).toHaveValue("160");
     await tempo(page).fill("176");
+    await tempo(page).press("Enter");
     await expect(tempo(collaborator)).toHaveValue("160");
   } finally {
     await collaborator.close();

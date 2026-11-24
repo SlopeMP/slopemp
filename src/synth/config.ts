@@ -398,8 +398,6 @@ export class Config {
     },
   ]);
 
-  public static readonly maxChordSize: number = 9;
-
   public static readonly chipNoiseLength: number = 1 << 15;
 
   public static readonly spectrumNoiseLength: number = 1 << 15;
@@ -444,7 +442,8 @@ export class Config {
 
   public static readonly maxPitch: number = Config.pitchOctaves * Config.pitchesPerOctave;
 
-  public static readonly maximumTonesPerChannel: number = Config.maxChordSize * 2;
+  // Only released tails above this budget fade early; active chords have no voice limit.
+  public static readonly maximumTonesPerChannel: number = 18;
 
   public static readonly pickedStringDispersionCenterFreq: number = 6000;
 

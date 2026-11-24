@@ -554,9 +554,6 @@ export const PatternEditor = (props: Props): JSX.Element => {
         if (existing !== -1) {
           target.pitches.splice(existing, 1);
         } else {
-          if (target.pitches.length >= 4) {
-            target.pitches.shift();
-          }
           target.pitches.push(clamp(g.pitch - bend, 0, 108));
           remember(target);
           props.onPreviewNote(g.pitch);

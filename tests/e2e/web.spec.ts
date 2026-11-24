@@ -89,6 +89,29 @@ test("note/chord edits preserve reuse and undo/redo restores the entire gesture"
   await page.getByTestId("cell-0-1").click();
   await expect(page.getByTestId("note")).toHaveCount(2);
 });
+test("large chords retain every pitch through editing, undo, redo and reload", async ({ page }) => {
+  for (let index = 0; index < 12; index++) {
+    await gridClick(page, 0.1, 0.15 + index * 0.06);
+  }
+  const song = await saved(page);
+  const { pitches } = requireValue(
+    requireValue(requireValue(song.channels[0]).patterns[1]).notes[0],
+  );
+  expect(pitches).toHaveLength(12);
+  await command(page, "Undo");
+  const undone = await saved(page);
+  expect(
+    requireValue(requireValue(requireValue(undone.channels[0]).patterns[1]).notes[0]).pitches,
+  ).toEqual(pitches.slice(0, -1));
+  await command(page, "Redo");
+  await saved(page);
+  await page.reload();
+  const reloaded = await saved(page);
+  expect(
+    requireValue(requireValue(requireValue(reloaded.channels[0]).patterns[1]).notes[0]).pitches,
+  ).toEqual(pitches);
+  await expect(page.getByTestId("note")).toHaveCount(12);
+});
 test("backward note drawing is a single history step and pointer cancel rolls back", async ({
   page,
 }) => {

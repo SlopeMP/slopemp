@@ -185,10 +185,7 @@ const prepareRuntimeSong = (
         continue;
       }
       const note = new Note(0, 0, 0, 0);
-      note.pitches = [...new Set(source.pitches.map((p) => Math.trunc(p)))].slice(
-        0,
-        Config.maxChordSize,
-      );
+      note.pitches = [...new Set(source.pitches.map((p) => Math.trunc(p)))];
       note.pins = [];
       const start = required(source.points[0]);
       note.start = Math.round(start.tick);

@@ -1,5 +1,6 @@
-export const audioBlockFrames = 512;
-export const queuedAudioBlocks = 4;
+// Keep queued synthesis under 12 ms at 44.1 kHz for responsive live input.
+export const audioBlockFrames = 256;
+export const queuedAudioBlocks = 2;
 // Leave room to queue a new transport generation before the worklet drops the old one.
 const slots = 2 * queuedAudioBlocks;
 const readCursor = 0;

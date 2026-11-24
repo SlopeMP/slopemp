@@ -8,6 +8,7 @@ import {
   removeAudioResource,
 } from "../../src/audio";
 import type { AudioCommand, AudioReply } from "../../src/audio";
+import { audioBlockFrames, queuedAudioBlocks } from "../../src/audio-output-buffer";
 import { createInstrument } from "../../src/instruments";
 import { createSong, required } from "../../src/model";
 
@@ -38,7 +39,7 @@ test("the audio bridge retains only song resources, forwards replacements, and r
     public initialize(): void {
       const command = required(this.commands.find((item) => item.type === "init"));
       const position = command.bar + command.beat / command.song.beatsPerBar;
-      for (let id = 0; id < 4; id++) {
+      for (let id = 0; id < queuedAudioBlocks; id++) {
         this.reply({
           type: "block",
           generation: command.generation,
@@ -46,7 +47,7 @@ test("the audio bridge retains only song resources, forwards replacements, and r
             id,
             start: position,
             end: position,
-            duration: 512 / command.sampleRate,
+            duration: audioBlockFrames / command.sampleRate,
             loopStart: command.song.loopStart,
             loopEnd: command.song.loopEnd,
           },

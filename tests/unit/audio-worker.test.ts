@@ -83,7 +83,7 @@ test("the synthesis worker replenishes shared audio independently and retains au
   for (let index = 0; index < 12; index++) {
     const id = index + queuedAudioBlocks;
     const written = whenWritten(id);
-    const time = 10 + (index + 1) * 0.064;
+    const time = 10 + (index + 1) * (audioBlockFrames / 8000);
     output.release(index, time);
     await written;
     expect(output.writeIndex).toBe(id + 1);
@@ -92,7 +92,7 @@ test("the synthesis worker replenishes shared audio independently and retains au
     expect(replies.at(-1)).toMatchObject({
       type: "block",
       generation: 0,
-      block: { id, duration: 0.064 },
+      block: { id, duration: audioBlockFrames / 8000 },
       time,
     });
   }
@@ -102,24 +102,24 @@ test("transport resets skip stale blocks and wait for space without blocking com
   const { song, output, replies, session, whenWritten } = await fixture();
   await session.handle({ type: "seek", bar: 2, beat: 0.5, generation: 1 });
   expect(output.generation).toBe(1);
-  expect(output.writeIndex).toBe(8);
-  expect(replies.at(-4)).toMatchObject({
+  expect(output.writeIndex).toBe(2 * queuedAudioBlocks);
+  expect(replies.at(-queuedAudioBlocks)).toMatchObject({
     type: "block",
     generation: 1,
-    block: { id: 4, start: 2 + 0.5 / song.beatsPerBar },
+    block: { id: queuedAudioBlocks, start: 2 + 0.5 / song.beatsPerBar },
   });
   await session.handle({ type: "pause", bar: 2, generation: 2 });
   expect(output.generation).toBe(2);
-  expect(output.writeIndex).toBe(8);
-  const written = whenWritten(11);
-  for (let index = 0; index < 8; index++) {
-    expect(output.blockGeneration(index)).toBe(index < 4 ? 0 : 1);
+  expect(output.writeIndex).toBe(2 * queuedAudioBlocks);
+  const written = whenWritten(3 * queuedAudioBlocks - 1);
+  for (let index = 0; index < 2 * queuedAudioBlocks; index++) {
+    expect(output.blockGeneration(index)).toBe(index < queuedAudioBlocks ? 0 : 1);
     output.release(index);
   }
   await written;
-  expect(output.writeIndex).toBe(12);
+  expect(output.writeIndex).toBe(3 * queuedAudioBlocks);
   expect(replies.some((reply) => reply.type === "consumed")).toBe(false);
-  for (let index = 8; index < 12; index++) {
+  for (let index = 2 * queuedAudioBlocks; index < 3 * queuedAudioBlocks; index++) {
     expect(output.blockGeneration(index)).toBe(2);
     const { left, right } = output.block(index);
     expect(left.every((value) => value === 0)).toBe(true);

@@ -46,25 +46,31 @@ test("audio worklet consumes shared stereo blocks and skips stale playback", asy
 
     write(1);
     write(2);
-    expectStereo(consume(480, 10), samples(480, 1));
+    expectStereo(consume(audioBlockFrames - 32, 10), samples(audioBlockFrames - 32, 1));
     expect(output.readIndex).toBe(0);
-    expectStereo(consume(128, 10.9375), [...samples(32, 1), ...samples(96, 2)]);
+    expectStereo(consume(128, 11 - 32 / audioBlockFrames), [...samples(32, 1), ...samples(96, 2)]);
     expect(output.readIndex).toBe(1);
     expect(output.consumedTime(0)).toBe(11);
-    expectStereo(consume(512, 11.1875), [...samples(416, 2), ...samples(96, 0)]);
+    expectStereo(consume(audioBlockFrames, 11 + 96 / audioBlockFrames), [
+      ...samples(audioBlockFrames - 96, 2),
+      ...samples(96, 0),
+    ]);
     expect(output.readIndex).toBe(2);
     expect(output.consumedTime(1)).toBe(12);
 
     write(3);
     write(4);
-    expectStereo(consume(128, 12.1875), samples(128, 3));
+    expectStereo(consume(128, 12 + 96 / audioBlockFrames), samples(128, 3));
     const oldTimes = [output.consumedTime(2), output.consumedTime(3)];
     output.generation = 1;
     write(5);
-    expectStereo(consume(512, 12.4375), samples(512, 5));
+    expectStereo(
+      consume(audioBlockFrames, 12 + 224 / audioBlockFrames),
+      samples(audioBlockFrames, 5),
+    );
     expect(output.readIndex).toBe(5);
     expect([output.consumedTime(2), output.consumedTime(3)]).toEqual(oldTimes);
-    expect(output.consumedTime(4)).toBe(13.4375);
+    expect(output.consumedTime(4)).toBe(13 + 224 / audioBlockFrames);
   } finally {
     for (const [key, descriptor] of previous) {
       if (descriptor) {

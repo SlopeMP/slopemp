@@ -1967,7 +1967,6 @@ type SFVoiceZone = {
   a2: number;
   history: Float64Array;
   mono: boolean;
-  attenuation: number;
   modVolume: number;
   panL: number;
   panR: number;
@@ -2012,6 +2011,10 @@ const prepareSoundFontVoice = (
       key,
       velocity,
     });
+    // EMU hardware scales the written attenuation, while modulators add full centibels.
+    const initialAttenuation = zone.generators.get(48) ?? 0;
+    const modulatedAttenuation = (g.get(48) ?? 0) - initialAttenuation;
+    const attenuation = clamp(initialAttenuation * 0.4 + modulatedAttenuation, 0, 1440);
     const header = required(font.headers[zone.sampleIndex]);
     const rootOverride = g.get(58) ?? -1;
     const pan = clamp((g.get(17) ?? 0) / 500, -1, 1);
@@ -2032,7 +2035,7 @@ const prepareSoundFontVoice = (
       tuning: (g.get(51) ?? 0) * 100 + (g.get(52) ?? 0) + header.correction,
       rateCents: Number.NaN,
       playbackRate: 0,
-      gain: db(-(g.get(48) ?? 0) / 10),
+      gain: 10 ** (-attenuation / 200),
       modEnvelope: prepareSFEnvelope(g, key, false),
       volEnvelope: prepareSFEnvelope(g, key, true),
       modPitch: g.get(5) ?? 0,
@@ -2052,7 +2055,6 @@ const prepareSoundFontVoice = (
       a2: 0,
       history: new Float64Array(8),
       mono: linkedOffset === 0,
-      attenuation: -(g.get(48) ?? 0) / 10,
       modVolume: (g.get(13) ?? 0) / 10,
       panL: Math.cos((Math.max(0, pan) * Math.PI) / 2),
       panR: Math.cos((Math.max(0, -pan) * Math.PI) / 2),
@@ -2223,10 +2225,8 @@ const soundFontSample = (
     h[6] = filteredR;
     l = filteredL;
     r = filteredR;
-    const gain =
-      (modLFO === 0 || zone.modVolume === 0
-        ? zone.gain
-        : db(zone.attenuation + modLFO * zone.modVolume)) * volEnv;
+    const lfoGain = modLFO === 0 || zone.modVolume === 0 ? 1 : db(modLFO * zone.modVolume);
+    const gain = zone.gain * volEnv * lfoGain;
     left += l * gain * zone.panL;
     right += r * gain * zone.panR;
     if (instrument.presetEffects) {

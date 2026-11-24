@@ -30,6 +30,7 @@ import { parseSoundFont } from "../../src/synth/soundfont-file";
 const tinyFont = (
   stereo = true,
   presetGenerators: ReadonlyArray<readonly [number, number]> = [],
+  attenuationModulator = 0,
 ): ArrayBuffer => {
   const le = (value: number, size = 2): number[] =>
     Array.from({ length: size }, (_, i): number => (value >>> (i * 8)) & 255);
@@ -78,11 +79,15 @@ const tinyFont = (
   const preset = [...record("Test Stereo", 0, 0, 0), ...record("EOP", 0, 0, 1)];
   const pdta = list("pdta", [
     chunk("phdr", preset),
-    chunk("pbag", [...le(0), ...le(0), ...le(presetGenerators.length + 1), ...le(0)]),
-    chunk(
-      "pmod",
-      Array.from({ length: 10 }, (): number => 0),
-    ),
+    chunk("pbag", [...le(0), ...le(0), ...le(presetGenerators.length + 1), ...le(1)]),
+    chunk("pmod", [
+      ...le(0),
+      ...le(48),
+      ...le(attenuationModulator),
+      ...le(0),
+      ...le(0),
+      ...Array.from({ length: 10 }, (): number => 0),
+    ]),
     chunk("pgen", [
       ...presetGenerators.flatMap(([key, value]) => [...le(key), ...le(value)]),
       ...le(41),
@@ -248,29 +253,35 @@ describe("SoundFont import and rendering", (): void => {
       ),
     ).toBe(true);
   });
-  test("native zones render stereo and apply attenuation with preset effects disabled", (): void => {
+  test("native zones render stereo and balance initial attenuation with preset effects disabled", (): void => {
     registerSoundFont("fixture", tinyFont());
-    registerSoundFont("fixture-quiet", tinyFont(true, [[48, 1440]]));
+    registerSoundFont("fixture-negative-attenuation", tinyFont(true, [[48, -419]]));
+    registerSoundFont("fixture-positive-attenuation", tinyFont(true, [[48, 271]]));
+    registerSoundFont("fixture-modulated-attenuation", tinyFont(true, [[48, 271]], 100));
     const song = createSong();
     song.channels = song.channels.slice(0, 1);
     required(song.channels[0]).cells[0] = 1;
     required(required(song.channels[0]).patterns[1]).notes = [createNote(0, 1, 48)];
     const instrument = createInstrument("SoundFont");
-    instrument.resourceId = "fixture";
     instrument.attack = 0;
     instrument.presetEffects = false;
     required(song.channels[0]).instruments = [instrument];
-    const renderer = new SongRenderer(song, 8000);
-    const samples = Array.from({ length: 400 }, (): Stereo => renderer.sample());
+    const render = (resourceId: string): Stereo[] => {
+      instrument.resourceId = resourceId;
+      const renderer = new SongRenderer(song, 8000);
+      return Array.from({ length: 400 }, (): Stereo => renderer.sample());
+    };
+    const samples = render("fixture");
     expect(samples.some((pair) => Math.abs(pair[0]) + Math.abs(pair[1]) > 0.001)).toBe(true);
     expect(samples.some(([left, right]) => Math.abs(left - right) > 0.001)).toBe(true);
     expect(samples.every((pair) => pair.every(Number.isFinite))).toBe(true);
-    instrument.resourceId = "fixture-quiet";
-    const quiet = new SongRenderer(song, 8000);
-    const quietSamples = Array.from({ length: 400 }, (): Stereo => quiet.sample());
-    // Attenuation is clamped at -100 dB; allow for the master's level-dependent makeup gain.
-    expect(Math.max(...quietSamples.flat().map(Math.abs))).toBeLessThan(
-      Math.max(...samples.flat().map(Math.abs)) * 2e-5,
+    expect(render("fixture-negative-attenuation")).toEqual(samples);
+    const peak = (output: Stereo[]): number => Math.max(...output.flat().map(Math.abs));
+    const positive = peak(render("fixture-positive-attenuation"));
+    expect(positive / peak(samples)).toBeCloseTo(10 ** ((-271 * 0.4) / 200), 6);
+    expect(peak(render("fixture-modulated-attenuation")) / positive).toBeCloseTo(
+      10 ** (-100 / 200),
+      6,
     );
   });
   test("truncated RIFF resources fail transactionally", (): void => {

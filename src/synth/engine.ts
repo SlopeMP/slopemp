@@ -2133,6 +2133,9 @@ export class Synth {
       const samplesLeftInBuffer: number = outputBufferLength - bufferIndex;
       const samplesLeftInTick: number = Math.ceil(this.tickSampleCountdown);
       const runLength: number = Math.min(samplesLeftInTick, samplesLeftInBuffer);
+      if (!this.isAtStartOfTick && this.liveInputStarted) {
+        this.determineLiveInputTones(song, samplesPerTick);
+      }
       if (this.isAtStartOfTick) {
         this.determineCurrentActiveTones(song, samplesPerTick, playSong);
         this.determineLiveInputTones(song, samplesPerTick);
@@ -2262,6 +2265,29 @@ export class Synth {
     }
   }
 
+  public setLiveInputPitches(pitches: number[]): void {
+    this.liveInputPitches = pitches;
+    this.liveInputStarted = true;
+    const { instrumentState, song } = this;
+    const tones = instrumentState.liveInputTones;
+    // Process releases on the event itself, so an off/on pair between render
+    // calls cannot reuse the previous attack, even for seamless transitions.
+    for (let index = tones.length - 1; index >= 0; index--) {
+      const tone = required(tones[index]);
+      const held = song.instrument.getChord().singleTone
+        ? pitches.length > 0
+        : pitches.includes(required(tone.pitches[0]));
+      if (held) {
+        continue;
+      }
+      tones.splice(index, 1);
+      this.releaseTone(instrumentState, tone);
+      if (!this.isAtStartOfTick) {
+        this.computeTone(song, this.getSamplesPerTick(), tone, true, false);
+      }
+    }
+  }
+
   private getNextBar(): number {
     const nextBar = this.bar + 1;
     return nextBar === this.song.loopStart + this.song.loopLength ? this.song.loopStart : nextBar;
@@ -2334,7 +2360,7 @@ export class Synth {
           tone.nextNote = null;
           tone.prevNote = null;
           tone.note = null;
-          tone.atNoteStart = this.liveInputStarted;
+          tone.atNoteStart = tone.freshlyAllocated;
           tone.forceContinueAtStart = false;
           tone.forceContinueAtEnd = false;
           this.computeTone(song, samplesPerTick, tone, false, false);

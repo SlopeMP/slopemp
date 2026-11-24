@@ -29,6 +29,7 @@ export type SynthRuntime = {
     tempo: number,
     detune: number,
   ) => boolean;
+  setLivePitches: (pitches: number[]) => void;
   setLoop: (start: number, end: number) => void;
   update: (data: SongSettings, settings: RuntimeSettings) => void;
   seek: (bar: number) => void;
@@ -262,23 +263,23 @@ export const createSynthRuntime = (data: SongSettings, settings: RuntimeSettings
   const left = new Float64Array(1);
   const right = new Float64Array(1);
   let live: number[] = [];
+  const setLivePitches = (pitches: number[]): void => {
+    if (pitches.length === live.length && pitches.every((pitch, index) => pitch === live[index])) {
+      return;
+    }
+    live = [...pitches];
+    synth.setLiveInputPitches(live);
+  };
   const applyControls = (pitches: number[], tempo: number, detune: number): void => {
     if (song.tempo !== tempo) {
       synth.tickSampleCountdown *= song.tempo / tempo;
       song.tempo = tempo;
     }
     instrument.songDetuneCents = detune;
-    let changed = pitches.length !== live.length;
-    for (let index = 0; !changed && index < pitches.length; index++) {
-      changed = pitches[index] !== live[index];
-    }
-    if (changed) {
-      synth.liveInputStarted = true;
-      live = [...pitches];
-      synth.liveInputPitches = live;
-    }
+    setLivePitches(pitches);
   };
   return {
+    setLivePitches,
     update: (nextData, nextSettings): void => {
       // Replace score/settings while keeping the synth's tones,
       // fractional tick position and oscillator phases alive across editor edits.

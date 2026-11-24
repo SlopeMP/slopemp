@@ -328,8 +328,19 @@ test("the audio bridge retains only song resources, forwards replacements, and r
         .filter((command) => command.type === "resource")
         .map((command) => command.update.id),
     ).toEqual([sampleId, fontId]);
+    const channel = required(song.channels[0]);
+    const cancelledNote = engine.audition(channel, 48);
+    engine.release(48);
+    const cancelledChord = engine.audition(channel, 52);
+    engine.releaseAll();
+    const replacedNote = engine.audition(channel, 55);
+    engine.release(55);
+    const heldNote = engine.audition(channel, 55);
     restarted.initialize();
-    await pendingPlay;
+    await Promise.all([pendingPlay, cancelledNote, cancelledChord, replacedNote, heldNote]);
+    expect(restarted.commands.filter((command) => command.type === "audition")).toEqual([
+      { type: "audition", channelId: channel.id, pitch: 55 },
+    ]);
     expect(engine.playing).toBe(false);
     expect(engine.bar).toBe(2);
     expect(restarted.commands.some((command) => command.type === "play")).toBe(false);

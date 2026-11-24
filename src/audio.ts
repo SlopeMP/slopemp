@@ -2411,6 +2411,8 @@ export class SongRenderer {
     }
   >();
   private readonly live = new Map<number, Channel>();
+  private liveNoteId = 0;
+  private readonly liveNoteIds = new Map<number, number>();
   private readonly livePitches = new Map<string, number[]>();
   private effectiveTempo = 150;
   private elapsedBeat = 0;
@@ -2492,17 +2494,20 @@ export class SongRenderer {
   }
   public audition(channel: Channel, pitch: number): void {
     this.live.set(pitch, channel);
+    this.liveNoteIds.set(pitch, ++this.liveNoteId);
     this.refreshLivePitches();
     this.renderBar = -1;
   }
   public release(pitch: number): void {
     this.live.delete(pitch);
+    this.liveNoteIds.delete(pitch);
     this.refreshLivePitches();
     this.renderBar = -1;
   }
   public releaseAll(): void {
     this.live.clear();
-    this.livePitches.clear();
+    this.liveNoteIds.clear();
+    this.refreshLivePitches();
     for (const key of this.voices.keys()) {
       if (key.startsWith("live-")) {
         this.voices.delete(key);
@@ -2704,7 +2709,7 @@ export class SongRenderer {
             }
           }
           for (const pitch of livePitches) {
-            const id = `live-${pitch}-${instrument.id}`;
+            const id = `live-${required(this.liveNoteIds.get(pitch))}-${pitch}-${instrument.id}`;
             const pair = this.synth(channel, instrument, pitch, id, undefined, globals);
             instrumentOutput[0] += pair[0];
             instrumentOutput[1] += pair[1];
@@ -3360,6 +3365,13 @@ export class SongRenderer {
       }
       pitches.push(pitch);
     }
+    for (const channel of this.song.channels) {
+      for (const instrument of channel.instruments) {
+        this.upstreamRenderers
+          .get(instrument.id)
+          ?.native.runtime.setLivePitches(this.livePitches.get(channel.id) ?? noPitches);
+      }
+    }
   }
   private effectEnvelopeVoice(
     track: RenderChannel,
@@ -3748,6 +3760,7 @@ export class AudioEngine {
   private threadCount = defaultAudioThreads();
   private frame = 0;
   private generation = 0;
+  private readonly pendingAuditions = new Map<number, object>();
   private readonly playbackClock = new PlaybackClock();
   private readonly sentResources = new Set<string>();
   public constructor(song: Song) {
@@ -3836,16 +3849,24 @@ export class AudioEngine {
     this.send({ type: "muted", muted: this.muted });
   }
   public async audition(channel: Channel, pitch: number): Promise<void> {
+    const request = {};
+    this.pendingAuditions.set(pitch, request);
     await this.ensure();
-    this.send({ type: "audition", channelId: channel.id, pitch });
+    if (this.pendingAuditions.get(pitch) === request) {
+      this.pendingAuditions.delete(pitch);
+      this.send({ type: "audition", channelId: channel.id, pitch });
+    }
   }
   public release(pitch: number): void {
+    this.pendingAuditions.delete(pitch);
     this.send({ type: "release", pitch });
   }
   public releaseAll(): void {
+    this.pendingAuditions.clear();
     this.send({ type: "releaseAll" });
   }
   public async close(): Promise<void> {
+    this.pendingAuditions.clear();
     this.generation++;
     resourceListeners.delete(this.sendResource);
     this.worker?.terminate();
@@ -3913,7 +3934,7 @@ export class AudioEngine {
       );
     }
     const { buffer: output } = new AudioOutputBuffer();
-    const context = new AudioContext();
+    const context = new AudioContext({ latencyHint: "interactive" });
     this.context = context;
     try {
       await context.audioWorklet.addModule(new URL("./audio-worklet.js", document.baseURI).href);

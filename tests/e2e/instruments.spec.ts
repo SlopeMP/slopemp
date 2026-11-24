@@ -53,6 +53,7 @@ test("instrument search filters group names and preset names independently", asy
   const dialog = page.getByRole("dialog", { name: "Choose instrument type" });
   const sidebar = dialog.getByRole("navigation", { name: "Instrument categories" });
   const search = dialog.getByRole("searchbox", { name: "Search instrument categories" });
+  await expect(search).toBeFocused();
   await sidebar.getByRole("button", { name: "Keyboard", exact: true }).click();
 
   await search.fill("  GUITAR ");

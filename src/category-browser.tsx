@@ -14,6 +14,12 @@ type DialogCategory = {
   icon?: IconName;
 } & ({ items: CategoryItem[] } | { keywords?: string; content: () => JSX.Element });
 
+export const focusDialogSearch = (dialog: HTMLDialogElement | null): boolean => {
+  const search = dialog?.querySelector<HTMLInputElement>('input[type="search"]');
+  search?.focus();
+  return Boolean(search);
+};
+
 // All category dialogs share navigation, section spacing, search, and scrolling.
 export const CategoryBrowser = (props: {
   readonly label: string;

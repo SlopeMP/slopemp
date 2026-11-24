@@ -10,7 +10,7 @@ import {
 import type { JSX } from "solid-js";
 
 import { getAudioResourceInfo } from "./audio";
-import { CategoryBrowser } from "./category-browser";
+import { CategoryBrowser, focusDialogSearch } from "./category-browser";
 import type { CategoryItem } from "./category-browser";
 import {
   DrawingEditor,
@@ -2230,7 +2230,7 @@ const TypeDialog = (props: {
   let dialog: HTMLDialogElement | null = null;
   createEffect(() => {
     const previous = document.activeElement;
-    dialog?.querySelector<HTMLButtonElement>("button")?.focus();
+    focusDialogSearch(dialog);
     const key = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
         event.stopPropagation();

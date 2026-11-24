@@ -11,6 +11,7 @@ for (const viewport of [
     await page.goto("./");
     await page.getByRole("button", { name: "Preferences", exact: true }).click();
     const preferences = page.getByRole("dialog", { name: "Preferences", exact: true });
+    await expect(preferences.getByRole("searchbox")).toBeFocused();
     const categories = preferences.getByRole("navigation", { name: "Preference categories" });
     await expect(categories.getByRole("button", { name: "All", exact: true })).toHaveAttribute(
       "aria-pressed",
@@ -48,6 +49,7 @@ for (const viewport of [
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Help", exact: true }).click();
     const help = page.getByRole("dialog", { name: "Help", exact: true });
+    await expect(help.getByRole("searchbox")).toBeFocused();
     await help.getByRole("button", { name: "Features", exact: true }).click();
     await expect(help.getByRole("heading", { name: "Features", exact: true })).toBeVisible();
     await expect(help.getByText(/Arrange reusable patterns/u)).toBeVisible();

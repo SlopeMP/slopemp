@@ -12,6 +12,7 @@ import { AudioEngine, installAudioResourceAlias, removeAudioResource } from "./a
 import { renderMp3, renderWav } from "./audio-export";
 import { createBlankSong } from "./browser-history";
 import type { EditorStartup } from "./browser-history";
+import { focusDialogSearch } from "./category-browser";
 import { ChannelEditor } from "./channel-editor";
 import { DeferredTask } from "./deferred-task";
 import { colorsForChannel } from "./editor-geometry";
@@ -1404,11 +1405,10 @@ export const App = (initial: EditorStartup): JSX.Element => {
   });
   createEffect(
     on(dialog, () => {
-      if (!dialog()) {
+      if (!dialog() || focusDialogSearch(dialogElement)) {
         return;
       }
-      const element = dialogElement;
-      const input = element?.querySelector<HTMLInputElement>(
+      const input = dialogElement?.querySelector<HTMLElement>(
         "input:not([type=checkbox]):not([type=range]),button",
       );
       input?.focus();

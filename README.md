@@ -88,10 +88,10 @@ becomes the active song. Import a song after joining to share it with the room.
 Undo and redo apply to your own edits. A conflicting reversal reports the conflict
 and skips that history entry.
 
-If the connection drops, editing pauses while the client reconnects. If the
-server cannot merge an edit, use **Download local draft** to keep your work.
-Choose **Disconnect** in the multiplayer dialog to keep editing the current song
-locally.
+If the connection drops, editing pauses while the client reconnects. The server
+decides which edits are final. Rejected edits are discarded when the client
+resynchronizes. Choose **Disconnect** in the multiplayer dialog to keep editing
+the server-confirmed song locally.
 
 The server creates the Git-ignored `run-server/` directory at startup and saves
 `run-server/currentsong.slopemp` every 60 seconds by default and on graceful

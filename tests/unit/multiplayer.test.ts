@@ -111,6 +111,11 @@ const revisions = async (revision: number, ...editors: MultiplayerClient[]): Pro
   );
 };
 
+const rejectedIds = (client: MultiplayerClient): string[] =>
+  required(clientEvents.get(client)).flatMap(({ event }) =>
+    event.type === "accepted" || event.type === "snapshot" ? event.rejected : [],
+  );
+
 const collaborate = (history: History, address: string, errors: string[]): MultiplayerClient => {
   const client = new MultiplayerClient((state, event) => {
     if (event.type === "snapshot" && state.song && history.committedSong.id !== state.song.id) {
@@ -122,11 +127,26 @@ const collaborate = (history: History, address: string, errors: string[]): Multi
         },
       });
     }
-    if (event.type === "accepted" && state.song) {
-      if (event.editorId === state.editorId) {
-        history.settle(event.id, true);
+    if (event.type === "accepted" || event.type === "snapshot") {
+      for (const id of event.rejected) {
+        history.settle(id, false);
       }
-      history.reconcile(state.song, event.editorId === state.editorId ? [] : [event.transaction]);
+      if (event.type === "accepted" && state.song) {
+        if (event.editorId === state.editorId) {
+          history.settle(event.id, true);
+        }
+        history.reconcile(state.song, event.editorId === state.editorId ? [] : [event.transaction]);
+      } else if (event.type === "snapshot" && state.song) {
+        for (const receipt of event.receipts) {
+          history.settle(receipt.id, true);
+        }
+        history.reconcile(
+          state.song,
+          event.changes
+            .filter(({ editorId }) => editorId !== state.editorId)
+            .map(({ transaction }) => transaction),
+        );
+      }
     }
   });
   clients.push(client);
@@ -215,11 +235,11 @@ test("preserves different edits from one revision and broadcasts both to each cl
       ({ event }) => event.type === "accepted",
     );
     expect(accepted).toHaveLength(2);
-    expect(client.state.conflicts).toEqual([]);
+    expect(rejectedIds(client)).toEqual([]);
   }
 });
 
-test("repairs rejection and retains independent pending edits from the same draft", async () => {
+test("discards rejected edits and retains independent pending edits", async () => {
   const address = start();
   const first = editor();
   const delayed: Array<() => void> = [];
@@ -233,7 +253,7 @@ test("repairs rejection and retains independent pending edits from the same draf
   await join(first, address);
   await join(second, address);
   const losing = edit(second, (song) => {
-    song.title = "My draft title";
+    song.title = "Rejected title";
   });
   edit(second, (song) => {
     song.volume = 83;
@@ -248,11 +268,9 @@ test("repairs rejection and retains independent pending edits from the same draf
   await revisions(2, first, second);
   expect(first.state.song).toEqual(second.state.song);
   expect(second.state.song).toMatchObject({ title: "Authoritative title", volume: 83 });
-  expect(second.state.conflicts.map(({ id }) => id)).toEqual([losing]);
-  expect(second.state.recoverySong).toMatchObject({ title: "My draft title", volume: 83 });
+  expect(rejectedIds(second)).toEqual([losing]);
   expect(required(clientEvents.get(second)).some(({ state }) => state.recovering)).toBe(true);
-  second.acknowledgeConflicts(losing);
-  expect(second.state.conflicts).toEqual([]);
+  expect(second.disconnect()).toMatchObject({ title: "Authoritative title", volume: 83 });
 });
 
 test("repairs a divergent local song while applying future broadcasts without refreshing", async () => {
@@ -278,7 +296,7 @@ test("repairs a divergent local song while applying future broadcasts without re
   expect(first.state.song).toEqual(second.state.song);
 });
 
-test("retains unacknowledged edits during socket loss and replays a valid draft on rejoin", async () => {
+test("retains unacknowledged edits during socket loss and resubmits pending edits on rejoin", async () => {
   const address = start();
   let interrupted = false;
   const first = editor((packet, send, socket) => {
@@ -310,7 +328,25 @@ test("retains unacknowledged edits during socket loss and replays a valid draft 
   expect(first.state.editorId).toBe(identity);
   expect(first.state.song).toEqual(second.state.song);
   expect(first.state.song).toMatchObject({ title: "Retained edit", tempo: 170 });
-  expect(first.state.conflicts).toEqual([]);
+  expect(rejectedIds(first)).toEqual([]);
+});
+
+test("disconnect keeps the server-confirmed song and discards pending edits", async () => {
+  const song = createSong();
+  const address = start(song);
+  const client = editor((packet, send) => {
+    if (packet.type !== "submit") {
+      send();
+    }
+  });
+  await join(client, address);
+  edit(client, (pending) => {
+    pending.title = "Unconfirmed title";
+  });
+  expect(client.state.song?.title).toBe("Unconfirmed title");
+  expect(client.disconnect()).toEqual(song);
+  expect(client.state.song).toEqual(song);
+  expect(client.state.pending).toEqual([]);
 });
 
 test("receives a single receipt on reconnect when the server committed before the socket dropped", async () => {
@@ -345,7 +381,7 @@ test("receives a single receipt on reconnect when the server committed before th
     event.type === "snapshot" ? event.receipts : [],
   );
   expect(receipts.map((receipt) => receipt.id)).toEqual([id]);
-  expect(first.state.conflicts).toEqual([]);
+  expect(rejectedIds(first)).toEqual([]);
 });
 
 test("enforces track locks, leaves unrelated edits available, and keeps a lock through its commit", async () => {
@@ -369,7 +405,7 @@ test("enforces track locks, leaves unrelated edits available, and keeps a lock t
   const rejected = edit(second, (song) => {
     required(song.channels[0]).name = "Blocked name";
   });
-  await until(() => second.state.conflicts.some(({ id }) => id === rejected), "lock rejection");
+  await until(() => rejectedIds(second).includes(rejected), "lock rejection");
   expect(second.state.revision).toBe(0);
   edit(second, (song) => {
     required(song.channels[1]).name = "Available track";
@@ -413,10 +449,7 @@ test("scopes a custom-editor lock to its instrument until the editor closes", as
     required(required(song.channels[0]).instruments[0]).volume = 0.37;
   };
   const blocked = edit(second, changeInstrument);
-  await until(
-    () => second.state.conflicts.some(({ id: conflictId }) => conflictId === blocked),
-    "instrument lock rejection",
-  );
+  await until(() => rejectedIds(second).includes(blocked), "instrument lock rejection");
   first.releaseLock(scope);
   await until(() => second.state.locks.length === 0, "custom editor lock release");
   edit(second, changeInstrument);
@@ -448,6 +481,30 @@ test("runs the same complex transactions offline, through connected histories, a
   const observer = editor();
   await join(observer, address);
   expect(observer.state.song).toEqual(offline.song);
+  expect(errors).toEqual([]);
+});
+
+test("rejected edits leave no undo entry after the server song is restored", async () => {
+  const address = start();
+  const owner = editor();
+  await join(owner, address);
+  const scope = { channelId: required(owner.state.song?.channels[0]).id };
+  expect(await owner.acquireLock(scope)).toBe(true);
+  const history = new History();
+  const errors: string[] = [];
+  const client = collaborate(history, address, errors);
+  await until(() => client.state.status === "connected", "history connection");
+  expect(
+    history.execute((song) => {
+      required(song.channels[0]).name = "Rejected track name";
+    }),
+  ).toBe(true);
+  await until(
+    () => client.state.pending.length === 0 && !client.state.recovering,
+    "rejected edit reconciliation",
+  );
+  expect(history.song).toEqual(required(owner.state.song));
+  expect(history.undo()).toBe(false);
   expect(errors).toEqual([]);
 });
 

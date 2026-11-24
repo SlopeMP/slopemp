@@ -18,8 +18,6 @@ export const MultiplayerDialog = (props: {
   readonly state: MultiplayerState;
   readonly connect: (address: string, password: string) => void;
   readonly disconnect: () => void;
-  readonly hasRecordingDraft: boolean;
-  readonly saveRecovery: () => void;
 }): JSX.Element => {
   const [address, setAddress] = createSignal(props.state.address ?? "");
   let password: HTMLInputElement | null = null;
@@ -110,17 +108,6 @@ export const MultiplayerDialog = (props: {
       </Show>
       <Show when={props.state.error}>
         <p role="alert">{props.state.error}</p>
-      </Show>
-      <Show when={props.state.conflicts.length > 0 || props.hasRecordingDraft}>
-        <p role="alert">
-          {props.hasRecordingDraft
-            ? "The recording could not be committed."
-            : props.state.conflicts[0]?.reason}
-          {" Download your local draft to keep this work."}
-        </p>
-        <button class="control" type="button" onClick={props.saveRecovery}>
-          Download local draft
-        </button>
       </Show>
     </div>
   );

@@ -285,8 +285,10 @@ export const App = (initial: EditorStartup): JSX.Element => {
       history.suspendPreview();
       interruptRecording?.();
     }
-    for (const conflict of state.conflicts) {
-      history.settle(conflict.id, false);
+    if (event.type === "accepted" || event.type === "snapshot") {
+      for (const id of event.rejected) {
+        history.settle(id, false);
+      }
     }
     if (state.song && state.editorId !== null && !joined) {
       joined = true;
@@ -371,22 +373,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
   };
   const startMultiplayer = (address: string, password: string): void => {
     multiplayerClient.connect(address, password);
-  };
-  const [recordingDraft, recoverRecording] = createSignal<Song | null>(null);
-  const saveRecovery = (): void => {
-    const draft = recordingDraft() ?? multiplayer().recoverySong;
-    if (draft) {
-      formats.downloadFile("SlopeMP local draft.slopemp", storage.serializeSongBytes(draft));
-      if (recordingDraft()) {
-        recoverRecording(null);
-      } else {
-        for (const conflict of multiplayer().conflicts.filter(
-          ({ draft: rejected }) => rejected === draft,
-        )) {
-          multiplayerClient.acknowledgeConflicts(conflict.id);
-        }
-      }
-    }
   };
   onCleanup(() => {
     multiplayerClient.disconnect();
@@ -672,14 +658,10 @@ export const App = (initial: EditorStartup): JSX.Element => {
         transaction.changes.length > 0 &&
         (editorLocked() || !history.commit(transaction, data.lock))
       ) {
-        recoverRecording(result);
-        notify("Download the local draft to keep your recording.");
+        notify("The recording could not be committed.");
       }
     } catch (error) {
-      recoverRecording(result);
-      notify(
-        `Could not apply the recording. Download the local draft to keep it. ${String(error)}`,
-      );
+      notify(`Could not apply the recording. ${String(error)}`);
     } finally {
       if (data.lock) {
         multiplayerClient.releaseLock(data.lock);
@@ -2417,9 +2399,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
                 };
         }}
       />
-      {multiplayer().status !== "offline" ||
-      multiplayer().conflicts.length > 0 ||
-      recordingDraft() ? (
+      {multiplayer().status !== "offline" ? (
         <button
           type="button"
           class="control multiplayer-status"
@@ -2430,7 +2410,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
           }}
         >
           {connectionLabel(multiplayer())}
-          {multiplayer().conflicts.length > 0 || recordingDraft() ? " · Draft available" : ""}
         </button>
       ) : null}
       {status() ? (
@@ -2514,8 +2493,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
                 disconnect={() => {
                   multiplayerClient.disconnect();
                 }}
-                saveRecovery={saveRecovery}
-                hasRecordingDraft={recordingDraft() !== null}
               />
             )}
             {dialog() === "channel-settings" && (

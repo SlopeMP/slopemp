@@ -21,13 +21,6 @@ import type {
 import { decodeServerPacket } from "@slopemp/song/protocol";
 export { editorLockConflicts } from "@slopemp/song/protocol";
 
-export type MultiplayerConflict = {
-  id: string;
-  transaction: Transaction;
-  reason: string;
-  draft: Song;
-};
-
 type ConnectionStatus = "connected" | "connecting" | "offline" | "reconnecting";
 export type MultiplayerState = {
   status: ConnectionStatus;
@@ -38,8 +31,6 @@ export type MultiplayerState = {
   editors: readonly EditorPresence[];
   locks: readonly EditorLock[];
   pending: readonly string[];
-  conflicts: readonly MultiplayerConflict[];
-  recoverySong: Song | null;
   error: string | null;
   recovering: boolean;
 };
@@ -49,9 +40,10 @@ export type MultiplayerEvent =
       type: "snapshot";
       receipts: readonly AcceptedTransaction[];
       changes: readonly AcceptedTransaction[];
+      rejected: readonly string[];
     }
-  | { type: "conflicts" | "connection" | "optimistic" | "presence" }
-  | (AcceptedTransaction & { type: "accepted" });
+  | { type: "connection" | "optimistic" | "presence" }
+  | (AcceptedTransaction & { type: "accepted"; rejected: readonly string[] });
 
 type Connection = {
   address: string;
@@ -111,8 +103,6 @@ const initialState = (): MultiplayerState => ({
   editors: [],
   locks: [],
   pending: [],
-  conflicts: [],
-  recoverySong: null,
   error: null,
   recovering: false,
 });
@@ -197,7 +187,7 @@ export class MultiplayerClient {
   }
 
   public disconnect(): Song | null {
-    const { song, conflicts } = this.current;
+    const song = this.confirmed ?? this.current.song;
     this.connection = null;
     this.confirmed = null;
     this.queue = [];
@@ -205,10 +195,7 @@ export class MultiplayerClient {
     this.attempts = 0;
     clearTimeout(this.retry);
     this.closeSocket();
-    this.publish(
-      { ...initialState(), song, ...this.conflictState(conflicts) },
-      { type: "connection" },
-    );
+    this.publish({ ...initialState(), song }, { type: "connection" });
     return song;
   }
 
@@ -272,12 +259,6 @@ export class MultiplayerClient {
     }
   }
 
-  public acknowledgeConflicts(id?: string): void {
-    const conflicts =
-      id === undefined ? [] : this.current.conflicts.filter((conflict) => conflict.id !== id);
-    this.publish(this.conflictState(conflicts), { type: "conflicts" });
-  }
-
   public requestSnapshot(): void {
     const { revision } = this.current;
     if (this.current.status !== "connected" || this.current.recovering || revision === null) {
@@ -296,10 +277,6 @@ export class MultiplayerClient {
 
   private pendingIds(): string[] {
     return this.queue.map(({ id }) => id);
-  }
-
-  private conflictState(conflicts: readonly MultiplayerConflict[]): Partial<MultiplayerState> {
-    return { conflicts, recoverySong: conflicts[0]?.draft ?? null };
   }
 
   private closeSocket(): void {
@@ -537,14 +514,19 @@ export class MultiplayerClient {
     );
     this.publish(
       {
-        ...projection,
+        song: projection.song,
         ...update,
         revision: packet.revision,
         pending: this.pendingIds(),
         recovering: false,
         error: null,
       },
-      { type: "snapshot", receipts: packet.receipts, changes: packet.changes },
+      {
+        type: "snapshot",
+        receipts: packet.receipts,
+        changes: packet.changes,
+        rejected: projection.rejected,
+      },
     );
     this.flush();
   }
@@ -577,8 +559,8 @@ export class MultiplayerClient {
     }
     const projection = this.project(next, [packet], this.current.editorId);
     this.publish(
-      { ...projection, revision: packet.revision, pending: this.pendingIds(), error: null },
-      packet,
+      { song: projection.song, revision: packet.revision, pending: this.pendingIds(), error: null },
+      { ...packet, rejected: projection.rejected },
     );
     this.flush();
   }
@@ -587,9 +569,8 @@ export class MultiplayerClient {
     confirmed: Song,
     changes: readonly AcceptedTransaction[],
     editorId: string | null,
-  ): Partial<MultiplayerState> {
-    const conflicts = [...this.current.conflicts];
-    const draft = this.current.song ?? confirmed;
+  ): { song: Song; rejected: string[] } {
+    const rejected: string[] = [];
     let song = confirmed;
     const remaining: Pending[] = [];
     for (const entry of this.queue) {
@@ -608,17 +589,12 @@ export class MultiplayerClient {
         }
         song = applyTransaction(song, entry.transaction);
         remaining.push(entry);
-      } catch (error) {
-        conflicts.push({
-          id: entry.id,
-          transaction: entry.transaction,
-          reason: transactionError(error),
-          draft,
-        });
+      } catch {
+        rejected.push(entry.id);
       }
     }
     this.queue = remaining;
-    return { song, ...this.conflictState(conflicts) };
+    return { song, rejected };
   }
 
   private flush(): void {

@@ -92,7 +92,7 @@ test("a broken cached sample can only be repaired with Retry", async ({ page }) 
   await openSong(page, true);
   await expect(ready(page)).toBeVisible();
   expect(requests).toBe(1);
-  await page.evaluate(async (source) => {
+  const cachedAsBlob = await page.evaluate(async (source) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("slopemp-assets");
       request.addEventListener("success", () => {
@@ -103,13 +103,14 @@ test("a broken cached sample can only be repaired with Retry", async ({ page }) 
       });
     });
     try {
-      await new Promise<void>((resolve, reject) => {
+      return await new Promise<boolean>((resolve, reject) => {
         const transaction = database.transaction("assets", "readwrite");
-        transaction
-          .objectStore("assets")
-          .put(new Blob([new Uint8Array(4)]), new URL(source, document.baseURI).href);
+        const store = transaction.objectStore("assets");
+        const key = new URL(source, document.baseURI).href;
+        const cached = store.get(key);
+        store.put(new Blob([new Uint8Array(4)]), key);
         transaction.addEventListener("complete", () => {
-          resolve();
+          resolve(cached.result instanceof Blob);
         });
         transaction.addEventListener("abort", () => {
           reject(transaction.error ?? new Error("Could not seed the asset cache."));
@@ -119,6 +120,7 @@ test("a broken cached sample can only be repaired with Retry", async ({ page }) 
       database.close();
     }
   }, guitarUrl);
+  expect(cachedAsBlob).toBe(true);
 
   await page.reload();
   await editAssets(page);

@@ -2005,8 +2005,11 @@ const prepareSoundFontVoice = (
     const rootOverride = g.get(58) ?? -1;
     const pan = clamp((g.get(17) ?? 0) / 500, -1, 1);
     const linked = font.headers[header.link];
-    const linkedOffset =
-      linked && (header.type === 2 || header.type === 4) ? linked.start - header.start : 0;
+    // Some banks use a placeholder link on separately panned left and right zones.
+    const stereoPair =
+      linked?.link === zone.sampleIndex &&
+      ((header.type === 2 && linked.type === 4) || (header.type === 4 && linked.type === 2));
+    const linkedOffset = stereoPair ? linked.start - header.start : 0;
     zones.push({
       header,
       position: header.start + (g.get(0) ?? 0) + (g.get(4) ?? 0) * 32_768,

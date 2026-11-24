@@ -5,6 +5,7 @@ import {
   getAudioResourceInfo,
   hasAudioResource,
   installAudioResourceAlias,
+  installSoundFont,
   registerAudioResource,
   registerSoundFont,
   removeAudioResource,
@@ -25,7 +26,7 @@ import {
   sfModulatorSource,
   timecentsToSeconds,
 } from "../../src/synth/soundfont";
-import { parseSoundFont } from "../../src/synth/soundfont-file";
+import { decodePCMSoundFont, parseSoundFont } from "../../src/synth/soundfont-file";
 const tinyFont = (
   stereo = true,
   presetGenerators: ReadonlyArray<readonly [number, number]> = [],
@@ -459,6 +460,11 @@ describe("prepared SoundFont playback", () => {
     ] as const;
     registerSoundFont("mono-zone", tinyFont(false, presetGenerators));
     registerSoundFont("stereo-zone", tinyFont(true, presetGenerators));
+    const brokenLink = decodePCMSoundFont(parseSoundFont(tinyFont(true, presetGenerators)));
+    const partner = required(brokenLink.headers[1]);
+    partner.type = 1;
+    brokenLink.samples.fill(0, partner.start, partner.end);
+    installSoundFont("broken-stereo-link", brokenLink);
     const song = createSong();
     song.channels = song.channels.slice(0, 1);
     const channel = required(song.channels[0]);
@@ -481,8 +487,13 @@ describe("prepared SoundFont playback", () => {
     stereo.resourceId = "stereo-zone";
     const a = new SongRenderer(song, 8000);
     const b = new SongRenderer(stereoSong, 8000);
+    const brokenLinkSong = structuredClone(stereoSong);
+    required(required(brokenLinkSong.channels[0]).instruments[0]).resourceId = "broken-stereo-link";
+    const c = new SongRenderer(brokenLinkSong, 8000);
     for (let index = 0; index < 8000; index++) {
-      expect(a.sample()).toEqual(b.sample());
+      const sample = a.sample();
+      expect(b.sample()).toEqual(sample);
+      expect(c.sample()).toEqual(sample);
     }
   });
   const longReleaseSong = (): Song => {

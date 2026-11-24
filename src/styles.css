@@ -2311,9 +2311,9 @@ input.graph-input {
 .dialog .dialog-page > .category-section + .category-section {
   margin-top: 22px;
 }
-.dialog .category-section > h3 {
+.dialog .category-heading {
+  margin: 0 0 4px;
   padding-bottom: 8px;
-  margin-bottom: 4px;
   border-bottom: 1px solid var(--surface-edge);
   font-size: 15px;
   font-weight: 500;

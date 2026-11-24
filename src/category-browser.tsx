@@ -97,7 +97,7 @@ export const CategoryBrowser = (props: {
           <For each={visible()}>
             {(category) => (
               <section class="category-section" aria-label={category.title}>
-                <h3>{category.title}</h3>
+                <h3 class="category-heading">{category.title}</h3>
                 <div class="category-content">
                   {"items" in category ? (
                     <div class="category-items">

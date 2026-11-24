@@ -1,0 +1,20 @@
+Florestan Basic GM GS — subset SoundFont
+Author: Nando Florestan
+
+Test file: tests/assets/florestan-subset.sf2
+Upstream file: https://github.com/schellingb/TinySoundFont/blob/853a0a171759f1ddba0de1442133a75912bbeffa/examples/florestan-subset.sf2
+Original author's SoundFonts page: https://dev.nando.audio/pages/soundfonts.html
+Downloaded: 2026-11-11
+Size: 531786 bytes
+SHA-256: 1d890349a4bf0ae8d932000f0157633c03b81e127e479e069238ff382db44a32
+
+The original SoundFont's embedded INFO/ICOP copyright field states, verbatim:
+Public Domain
+
+The unmodified file retains its original INFO/ICOP and INFO/ICMT fields.
+The author information is also recorded in the downstream distribution notice:
+https://github.com/amberwhitehead/tinysoundfont-pybind/blob/main/NOTICE
+
+No TinySoundFont software is included with this audio asset. The TinySoundFont
+software's separate MIT license does not replace the SoundFont's public-domain
+notice.

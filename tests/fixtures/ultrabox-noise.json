@@ -1,0 +1,62 @@
+[
+  {
+    "name": "retro",
+    "hash": "e3e2a44386c9d20785ff4d20700c9c12ff4ceec533007e5e69af368331404fa7"
+  },
+  {
+    "name": "white",
+    "hash": "f12a59bb556795e13838da8891eacd54f13fa025d25a89dc1fc6f045910d78dd"
+  },
+  {
+    "name": "clang",
+    "hash": "5a5c341e2141c4e7e87a608087129ea6c39cf0b595c6a62c166a1ea949403fa9"
+  },
+  {
+    "name": "buzz",
+    "hash": "17282ca92ae313213fc2df2efc4e89b2442e23591a79ec545bfabca36e7d1111"
+  },
+  {
+    "name": "hollow",
+    "hash": "cd769d75a0523ac46ab93b6f873d0e1cd1c7bf6213d9eea0ef734b68a34cd899"
+  },
+  {
+    "name": "shine",
+    "hash": "17282ca92ae313213fc2df2efc4e89b2442e23591a79ec545bfabca36e7d1111"
+  },
+  {
+    "name": "deep",
+    "hash": "2598d6da11a5c46ad2102e20230616681b10f9da9d9872a3fdc766e6b18449bf"
+  },
+  {
+    "name": "cutter",
+    "hash": "203f651de398d2fb70fe911ac75001da1bfba2a9699b6f199596de5a33e2e35b"
+  },
+  {
+    "name": "metallic",
+    "hash": "0af57c6ff5bce4ed5c47b796815d47ec353c731f3dc83ad4106d80b0387509ec"
+  },
+  {
+    "name": "static",
+    "hash": "fa93d07b64f6453b9ae7ddd4d88ac902d53d7ee34e91d3a0f68f8a36247053ad"
+  },
+  {
+    "name": "1-bit white",
+    "hash": "b0f49180fac3b16f2fdc81c7967f85fdc8a6a4c832378662079fc007c5331c34"
+  },
+  {
+    "name": "1-bit metallic",
+    "hash": "ae491137940d2b503a019cec314661c2cbb2f39f81faed1a4cb55ac1ea797808"
+  },
+  {
+    "name": "crackling",
+    "hash": "2867251c6996316d3a04348598d1499bd53eed5f6c7a975777948b175193e8ff"
+  },
+  {
+    "name": "pink",
+    "hash": "c7aab6956249b9f17343cdfdaf7834dcf5c4c4340834ee85020275dc4da34343"
+  },
+  {
+    "name": "brownian",
+    "hash": "942a67357bdfec64e03ed91fb68897fcf4fe27bd9468d9c68f343a87df32b3ab"
+  }
+]

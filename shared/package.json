@@ -1,0 +1,26 @@
+{
+  "name": "@slopemp/song",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./digest": "./digest.ts",
+    "./protocol": "./protocol.ts",
+    "./test-fixtures": "./test-fixtures.ts",
+    "./bundled-resources": "./bundled-resources.ts",
+    "./filters": "./filters.ts",
+    "./instruments": "./instruments.ts",
+    "./presets": "./presets.ts",
+    "./shape": "./shape.ts",
+    "./soundfont-types": "./soundfont-types.ts",
+    "./binary-frame": "./binary-frame.ts",
+    "./codec": "./codec.ts",
+    "./generated/*.js": "./generated/*.ts",
+    "./protobuf": "./protobuf.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "2.17.0",
+    "fflate": "0.8.2"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@slopemp/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./server.ts",
+  "scripts": {
+    "start": "bun index.ts",
+    "test": "bun test",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@slopemp/song": "workspace:*"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "slopemp",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "workspaces": [
+    "shared",
+    "server"
+  ],
+  "type": "module",
+  "scripts": {
+    "benchmark:audio": "bun scripts/benchmark-audio.ts",
+    "benchmark:song": "bun scripts/benchmark-song.ts",
+    "benchmark:synthesis": "bun scripts/benchmark-synthesis.ts",
+    "build": "bun scripts/build.ts",
+    "cf:login": "wrangler login",
+    "deploy": "bun run build && wrangler pages deploy --branch main",
+    "preview:pages": "bun run build && wrangler pages dev",
+    "typecheck": "tsc -p src && tsc -p src/service-worker && tsc -p tsconfig.json && tsc -p server",
+    "lint": "bun lint --no-script",
+    "lint:fix": "bun lint --no-script --fix",
+    "fmt": "bun fmt --no-script",
+    "fmt:check": "bun fmt --no-script --check",
+    "test": "bun run test:unit && bun run test:server && bun run test:browser",
+    "check": "bun run typecheck && bun lint && bun run fmt:check",
+    "start": "bun scripts/start.ts",
+    "test:unit": "bun test tests/unit",
+    "test:browser": "bun run build && playwright test",
+    "generate:proto": "mkdir -p shared/generated src/generated && protoc -I shared --es_out=shared/generated --es_opt=target=ts shared/instrument.proto shared/song.proto && protoc -I src -I shared --es_out=src/generated --es_opt=target=ts,map_imports=song.proto:@slopemp/song/generated,map_imports=instrument.proto:@slopemp/song/generated src/asset-favorites.proto src/clipboard.proto && protoc -I src --es_out=src/generated --es_opt=target=ts src/preferences.proto",
+    "server": "bun server/index.ts",
+    "test:server": "bun test server"
+  },
+  "dependencies": {
+    "@breezystack/lamejs": "1.2.7",
+    "@bufbuild/protobuf": "2.17.0",
+    "@slopemp/song": "workspace:*",
+    "@tabler/icons": "3.52.0",
+    "@wasm-audio-decoders/ogg-vorbis": "0.1.20",
+    "fflate": "0.8.2",
+    "solid-js": "1.9.19"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.13",
+    "@babel/preset-typescript": "7.29.7",
+    "@bufbuild/protoc-gen-es": "2.17.0",
+    "@playwright/test": "1.65.0",
+    "@slopemp/server": "workspace:*",
+    "@types/babel__core": "7.20.5",
+    "@types/bun": "1.4.4",
+    "babel-preset-solid": "1.9.19",
+    "typescript": "7.0.2",
+    "wrangler": "4.167.0"
+  },
+  "engines": {
+    "bun": ">=1.4.4-canary.1"
+  },
+  "packageManager": "bun@1.4.4-canary.1"
+}

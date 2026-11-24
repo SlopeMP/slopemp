@@ -1,0 +1,222 @@
+[
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 2.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 3
+        },
+        {
+          "time": 1,
+          "interval": 0,
+          "volume": 3
+        }
+      ]
+    },
+    "width": 80,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": true,
+    "path": "M 101 274 L 101 259 L 179 259 L 179 274 L 101 274 z"
+  },
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 2.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 3
+        },
+        {
+          "time": 1,
+          "interval": 0,
+          "volume": 3
+        }
+      ]
+    },
+    "width": 80,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": false,
+    "path": "M 101 274 L 101 259 L 179 259 L 179 274 L 101 274 z"
+  },
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 3.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 1
+        },
+        {
+          "time": 0.5,
+          "interval": 4,
+          "volume": 3
+        },
+        {
+          "time": 2,
+          "interval": -2,
+          "volume": 0
+        }
+      ]
+    },
+    "width": 80,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": true,
+    "path": "M 101 269 L 101 264 L 139 207 L 140 207 L 140 207 L 141 207 L 259 292.5 L 259 292.5 L 258 292.5 L 140 222 L 140 222 L 102 269 L 101 269 z"
+  },
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 3.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 1
+        },
+        {
+          "time": 0.5,
+          "interval": 4,
+          "volume": 3
+        },
+        {
+          "time": 2,
+          "interval": -2,
+          "volume": 0
+        }
+      ]
+    },
+    "width": 80,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": false,
+    "path": "M 101 274 L 101 259 L 139 207 L 140 207 L 140 207 L 141 207 L 259 285 L 259 300 L 258 300 L 140 222 L 140 222 L 102 274 L 101 274 z"
+  },
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 2.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 3
+        },
+        {
+          "time": 1,
+          "interval": 0,
+          "volume": 3
+        }
+      ]
+    },
+    "width": 103.5,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": true,
+    "path": "M 130.38 274 L 130.38 259 L 231.88 259 L 231.88 274 L 130.38 274 z"
+  },
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 2.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 3
+        },
+        {
+          "time": 1,
+          "interval": 0,
+          "volume": 3
+        }
+      ]
+    },
+    "width": 103.5,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": false,
+    "path": "M 130.38 274 L 130.38 259 L 231.88 259 L 231.88 274 L 130.38 274 z"
+  },
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 3.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 1
+        },
+        {
+          "time": 0.5,
+          "interval": 4,
+          "volume": 3
+        },
+        {
+          "time": 2,
+          "interval": -2,
+          "volume": 0
+        }
+      ]
+    },
+    "width": 103.5,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": true,
+    "path": "M 130.38 269 L 130.38 264 L 180.13 207 L 181.13 207 L 181.13 207 L 182.13 207 L 335.38 292.5 L 335.38 292.5 L 334.38 292.5 L 181.13 222 L 181.13 222 L 131.38 269 L 130.38 269 z"
+  },
+  {
+    "note": {
+      "id": "fixture",
+      "start": 1.25,
+      "end": 3.25,
+      "pitches": [16],
+      "pins": [
+        {
+          "time": 0,
+          "interval": 0,
+          "volume": 1
+        },
+        {
+          "time": 0.5,
+          "interval": 4,
+          "volume": 3
+        },
+        {
+          "time": 2,
+          "interval": -2,
+          "volume": 0
+        }
+      ]
+    },
+    "width": 103.5,
+    "pitch": 16,
+    "radius": 7.5,
+    "showSize": false,
+    "path": "M 130.38 274 L 130.38 259 L 180.13 207 L 181.13 207 L 181.13 207 L 182.13 207 L 335.38 285 L 335.38 300 L 334.38 300 L 181.13 222 L 181.13 222 L 131.38 274 L 130.38 274 z"
+  }
+]

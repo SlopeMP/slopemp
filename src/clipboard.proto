@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package slopemp;
+
+import "instrument.proto";
+import "song.proto";
+
+message InstrumentClipboard {
+  Instrument instrument = 1;
+}
+
+message PatternClipboard {
+  optional uint32 version = 1;
+  optional string song_id = 2;
+  optional bool whole_bars = 3;
+  optional double duration = 4;
+  repeated ClipboardRow rows = 5;
+}
+
+message ClipboardRow {
+  optional string channel_id = 1;
+  optional string kind = 2;
+  repeated double cells = 3;
+  map<uint64, Pattern> patterns = 4;
+}

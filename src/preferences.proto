@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package slopemp;
+
+message Preferences {
+  map<string, KeyBindingList> key_bindings = 1;
+  optional string controls_preset = 2;
+  optional double listening_volume = 3;
+  optional double audio_threads = 4;
+  optional bool auto_follow = 5;
+  optional bool allow_outside_scale = 6;
+  optional bool left_align_piano = 7;
+  optional bool song_in_url = 8;
+  optional string layout = 9;
+  optional bool snap_recording = 10;
+  optional bool filter_recording = 11;
+  optional string keyboard_layout = 12;
+  optional bool unbound_keys_play_notes = 13;
+  optional bool metronome = 14;
+  optional bool count_in = 15;
+  optional bool midi = 16;
+  optional string default_scale = 17;
+  CustomScale default_custom_scale = 18;
+  optional string export_format = 19;
+  optional string sideways_strategy = 20;
+}
+
+// An empty list disables an action. An absent entry uses the default shortcut.
+message KeyBindingList {
+  repeated KeyBinding bindings = 1;
+}
+
+message KeyBinding {
+  optional string code = 1;
+  optional bool shift = 2;
+  optional bool mod = 3;
+  optional bool alt = 4;
+}
+
+message CustomScale {
+  repeated int32 pitches = 1;
+}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package slopemp;
+
+import "song.proto";
+
+message AssetFavorites {
+  optional uint32 version = 1;
+  repeated Resource resources = 2;
+}

@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package slopemp;
+
+message Instrument {
+  reserved 34;
+
+  optional string id = 1;
+  optional string name = 2;
+  optional string type = 3;
+  optional string preset = 4;
+  optional double volume = 5;
+  optional string wave = 6;
+  optional string noise = 7;
+  optional double attack = 8;
+  optional double release = 9;
+  optional double sustain = 10;
+  optional string transition = 11;
+  optional string chords = 12;
+  optional double arpeggio_speed = 13;
+  optional bool fast_two_note = 14;
+  repeated Effect effects = 15;
+  repeated Envelope envelopes = 16;
+  repeated double harmonics = 17;
+  repeated double spectrum = 18;
+  repeated double custom_wave = 19;
+  repeated FMOperator operators = 20;
+  repeated FMConnection connections = 21;
+  repeated FMConnection feedback = 22;
+  optional double feedback_volume = 23;
+  optional double phase_randomness = 24;
+  repeated Drum drums = 25;
+  optional double dynamism = 26;
+  optional double spread = 27;
+  optional double pulse_width = 28;
+  optional double shape = 29;
+  optional bool preset_effects = 30;
+  optional string resource_id = 31;
+  optional double bank = 32;
+  optional double program = 33;
+  optional double root_key = 35;
+  optional double sample_start = 36;
+  optional double loop_start = 37;
+  optional double loop_end = 38;
+  optional string loop_mode = 39;
+  optional bool backwards = 40;
+}
+
+message Effect {
+  optional string id = 1;
+  optional string type = 2;
+  optional bool enabled = 3;
+  map<string, EffectParameter> parameters = 4;
+}
+
+message EffectParameter {
+  oneof kind {
+    double number = 1;
+    bool boolean = 2;
+    string text = 3;
+  }
+}
+
+message Envelope {
+  optional string id = 1;
+  optional string target = 2;
+  optional string type = 3;
+  optional double speed = 4;
+  optional double a = 5;
+  optional double b = 6;
+  optional string time_basis = 7;
+  optional string clock = 8;
+  optional double phase = 9;
+  optional double duty = 10;
+  optional double attack = 11;
+  optional double decay = 12;
+  optional double sustain = 13;
+  optional double release = 14;
+  optional bool enabled = 15;
+  optional double curve = 16;
+  optional string law = 17;
+  optional double delay = 18;
+  optional double hold = 19;
+  optional double initial_level = 20;
+  optional double terminal_level = 21;
+  optional double key_to_hold = 22;
+  optional double key_to_decay = 23;
+  SoundFontModulators sf2_modulators = 24;
+}
+
+message FMOperator {
+  optional string id = 1;
+  optional double ratio = 2;
+  optional double offset = 3;
+  optional double amplitude = 4;
+  optional double coarse = 5;
+  optional double fine = 6;
+  optional double pan = 7;
+  optional double phase = 8;
+  optional double stereo_phase = 9;
+  optional double stereo_detune = 10;
+  optional bool invert = 11;
+  optional bool carrier = 12;
+  optional string wave = 13;
+  optional double pulse_width = 14;
+  repeated double custom_wave = 15;
+}
+
+message FMConnection {
+  optional string from = 1;
+  optional string to = 2;
+}
+
+message Drum {
+  repeated double spectrum = 1;
+  Envelope envelope = 2;
+}
+
+message SoundFontModulator {
+  optional double source = 1;
+  optional double destination = 2;
+  optional double amount = 3;
+  optional double amount_source = 4;
+  optional double transform = 5;
+}
+
+message SoundFontModulators {
+  repeated SoundFontModulator entries = 1;
+}

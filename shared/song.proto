@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package slopemp;
+
+import "instrument.proto";
+
+// Explicit scalar presence lets the reader distinguish missing data from valid zero,
+// false, and empty string values.
+message Song {
+  reserved 16;
+
+  optional uint32 version = 1;
+  optional string id = 2;
+  optional string title = 3;
+  optional uint32 key = 4;
+  optional string scale = 5;
+  repeated uint32 custom_scale = 6;
+  optional uint32 tempo = 7;
+  optional uint32 rhythm = 8;
+  optional uint32 beats_per_bar = 9;
+  optional double bar_count = 10;
+  optional double pattern_count = 11;
+  optional double loop_start = 12;
+  optional double loop_end = 13;
+  optional double volume = 14;
+  optional double detune = 15;
+  repeated Channel channels = 17;
+  repeated Resource resources = 18;
+}
+
+message Channel {
+  optional string id = 1;
+  optional string name = 2;
+  optional string kind = 3;
+  optional uint32 octave = 4;
+  optional uint32 octaves = 5;
+  // Zero is an empty cell. Nonzero cells reference pattern numbers.
+  repeated double cells = 6;
+  map<uint64, Pattern> patterns = 7;
+  repeated Instrument instruments = 8;
+  repeated Effect effects = 9;
+  AutomationTarget target = 10;
+  optional bool enabled = 11;
+}
+
+message AutomationTarget {
+  optional string kind = 1;
+  optional string channel_id = 2;
+  optional string instrument_id = 3;
+}
+
+message Pattern {
+  repeated Note notes = 1;
+  repeated AutomationLane lanes = 2;
+}
+
+message Note {
+  optional string id = 1;
+  optional double start = 2;
+  optional double end = 3;
+  repeated double pitches = 4;
+  repeated Pin pins = 5;
+  optional bool continues = 6;
+}
+
+message Pin {
+  optional double time = 1;
+  optional double interval = 2;
+  optional double volume = 3;
+}
+
+message AutomationLane {
+  optional string id = 1;
+  optional string target = 2;
+  repeated AutomationPoint points = 3;
+  optional string interpolation = 4;
+  optional string effect_id = 5;
+  optional bool enabled = 6;
+}
+
+message AutomationPoint {
+  optional double time = 1;
+  optional double value = 2;
+}
+
+message Resource {
+  reserved 2, 3, 5, 6, 13;
+
+  optional string id = 1;
+  optional string url = 4;
+  optional uint32 root_key = 7;
+  optional double start = 8;
+  optional double loop_start = 9;
+  optional double loop_end = 10;
+  optional string mode = 11;
+  optional bool backwards = 12;
+  ResourceMetadata metadata = 14;
+}
+
+message ResourceMetadata {
+  reserved 4, 5;
+
+  optional bool bundled = 1;
+  optional string license = 2;
+  optional string revision = 3;
+}

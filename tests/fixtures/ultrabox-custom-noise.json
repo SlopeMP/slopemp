@@ -1,0 +1,1390 @@
+{
+  "revision": "91b4bc1988e605ba5f5009f557e52ccb33975754",
+  "cases": [
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "custom instrument defaults",
+      "hash": "e62a24e7bb25acdf5630cd4ff719ff00eb97a2d47dff27aa5a5dd21999b8ac64",
+      "rms": 0.01818875086648623
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "white",
+      "scenario": "custom instrument defaults",
+      "hash": "967460366354ee937ec940a00eb7bec1d27510dfe629c19868c6bb8608a3dbc9",
+      "rms": 0.0182379009539278
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "clang",
+      "scenario": "custom instrument defaults",
+      "hash": "994922a1bd6dc4de5c02b20d0160c6c8f16997ccb1082b6e0cb5a57da952c522",
+      "rms": 0.02910200055228743
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "buzz",
+      "scenario": "custom instrument defaults",
+      "hash": "4927c0730a070a3ae4dbeec3f59670eb4aa70154a8dc7634b42bff67b48791cc",
+      "rms": 0.021826501456605335
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "hollow",
+      "scenario": "custom instrument defaults",
+      "hash": "e7261b29672a24fa3e0519dc66a81eb9cd3d0ab1af649843747b320733f42bd4",
+      "rms": 0.025083396722624725
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "shine",
+      "scenario": "custom instrument defaults",
+      "hash": "500ee9ecb69468f441caef851c9470c51f577813971ff15ea5876b70efcef32c",
+      "rms": 0.07275500346594492
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "deep",
+      "scenario": "custom instrument defaults",
+      "hash": "d12e82568b422285949216e03df8c8c7746271effb451451b178a27b9b3957b8",
+      "rms": 0.02363557785472957
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "cutter",
+      "scenario": "custom instrument defaults",
+      "hash": "b0bcb5cfb8e387645fe7b9f833dcaedc13b963841672e4757584cc6da413856e",
+      "rms": 0.007693842615912568
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "metallic",
+      "scenario": "custom instrument defaults",
+      "hash": "6da9431944fcd345164c36ae3723b1793b5cae2c43afbaa70d45dc7276d60e71",
+      "rms": 0.027396337392877813
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "static",
+      "scenario": "custom instrument defaults",
+      "hash": "f4f0191d693174bd4b106474e54d1d212a7f06117ee975db1da405d49717bd95",
+      "rms": 0.07324525918338393
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "1-bit white",
+      "scenario": "custom instrument defaults",
+      "hash": "a08126ebf2212d53f672e05f67e0b43cbdbdd7ea88961e7a59a4a5fc4b70b4fc",
+      "rms": 0.025306844935734884
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "1-bit metallic",
+      "scenario": "custom instrument defaults",
+      "hash": "80e386295982716828f6cd6aee0049e3bbc13d4dcee047fa767479af5f250bb0",
+      "rms": 0.02393207449407214
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "crackling",
+      "scenario": "custom instrument defaults",
+      "hash": "f7253c170add0cc7ee6f3cb6ea82e0d0b61007d463ab10d746b3b6bed11f0003",
+      "rms": 0.007702541333029932
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "pink",
+      "scenario": "custom instrument defaults",
+      "hash": "cd7032583c6f3b0f4fe1a5bf721a308eff3e5bc951746ee97bfedc8ff1431217",
+      "rms": 0.02952482520121581
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "brownian",
+      "scenario": "custom instrument defaults",
+      "hash": "43422fd70da6cae621412ab5d3dc9f39cb936e3926bc3a4222459691e8a151b2",
+      "rms": 0.025037603182371762
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [12],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 12",
+      "hash": "9fdd57428426c759134fff535621192148d8ac7d6d61d12c526b511ee5223feb",
+      "rms": 0.027568990321616558
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [36],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 36",
+      "hash": "1d2873b42fbb97f9fa9885c766691b6711bc4ea9e17f36fa293888161a0947fa",
+      "rms": 0.0208933877999485
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [60],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 60",
+      "hash": "5585b000395375b9b7b880a563edafb932cb11ab8f6f27c4493769cf3f63763d",
+      "rms": 0.015834226777934127
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [84],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 84",
+      "hash": "638962fd78cb1a26540707752dba4997f79b17786b69157a19af34362cc916c4",
+      "rms": 0.01200010013002254
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 7,
+      "volume": 0.33,
+      "pan": 0,
+      "attack": 0.0263,
+      "release": -0.0625,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [36, 43, 48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 6,
+              "pitchBend": 7,
+              "volume": 35
+            },
+            {
+              "tick": 12,
+              "pitchBend": 7,
+              "volume": 65
+            }
+          ]
+        },
+        {
+          "pitches": [60],
+          "points": [
+            {
+              "tick": 18,
+              "pitchBend": 0,
+              "volume": 60
+            },
+            {
+              "tick": 24,
+              "pitchBend": -5,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "key, volume, chords, bends and expression",
+      "hash": "4e825a5178dc911d8d5717b4a1198a41395fe04b7230a0ae537eec6fb9638888",
+      "rms": 0.004543255825784068
+    },
+    {
+      "sampleRate": 44100,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "audition",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "live audition and release",
+      "hash": "e62a24e7bb25acdf5630cd4ff719ff00eb97a2d47dff27aa5a5dd21999b8ac64",
+      "rms": 0.01818875086648623
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "custom instrument defaults",
+      "hash": "d560b54169b462c412ddcbb802dcd2b55ca3e567153208282f4f05d845c4fedf",
+      "rms": 0.01818830295035415
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "white",
+      "scenario": "custom instrument defaults",
+      "hash": "28ebc3be27c267d20cf88bfd10cd8b19690c2cbf42a92218983fd19c5769d2ce",
+      "rms": 0.018236862570820953
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "clang",
+      "scenario": "custom instrument defaults",
+      "hash": "0d7d9a6dd8064160a6680498f892deb8ef05a6f451792d2ca446033f8d4b182f",
+      "rms": 0.02910128388577248
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "buzz",
+      "scenario": "custom instrument defaults",
+      "hash": "07beebfdbfd9a38c86b435ae0ea0be51bd833547fab6030018c50f9bcf08a303",
+      "rms": 0.02182596395694535
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "hollow",
+      "scenario": "custom instrument defaults",
+      "hash": "85c309769107ffe55ace1e3fee4e5c294d822f365626b1e33e69fc0e333547a0",
+      "rms": 0.02493746901822634
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "shine",
+      "scenario": "custom instrument defaults",
+      "hash": "9afb21ca96b65a05c718c8b19e4c632236a28543a77dd0bad555f9643543c47c",
+      "rms": 0.0727532118014166
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "deep",
+      "scenario": "custom instrument defaults",
+      "hash": "2ad11778a3fe16335f58db4e3a9ea0dc646e0571c0ed4ff5366942da82169dc6",
+      "rms": 0.023654649498831056
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "cutter",
+      "scenario": "custom instrument defaults",
+      "hash": "73aac0d938853a0fc9a334c55ce331216cf5ad7f1446df2d9f3184ae242e71c8",
+      "rms": 0.007666323912323828
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "metallic",
+      "scenario": "custom instrument defaults",
+      "hash": "0c82e776d478b9fd9b8f87453774435f2e49406c688a449db5c76b79daed8cf6",
+      "rms": 0.027444975142314306
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "static",
+      "scenario": "custom instrument defaults",
+      "hash": "b6d2dcce9bdd513c4490e4c1286aef8c77da34f13dfb803cfb7eb6afe0b2b238",
+      "rms": 0.07328658438386487
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "1-bit white",
+      "scenario": "custom instrument defaults",
+      "hash": "c15e3ecdc2fdb99eb4ffe0c2eef7642ce35e8c04bd9a2dd0c88e0d971fd6cfc1",
+      "rms": 0.02526484947327514
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "1-bit metallic",
+      "scenario": "custom instrument defaults",
+      "hash": "e64267dde75ad162b936122ceb987c7a627d9224eb63647056e6593071c2dde6",
+      "rms": 0.023930511844968867
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "crackling",
+      "scenario": "custom instrument defaults",
+      "hash": "f4a81e7469af7b2305529bf25cf0b7e627523d62685680ab02078c2d15de37cc",
+      "rms": 0.0077001737669197216
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "pink",
+      "scenario": "custom instrument defaults",
+      "hash": "1b33ecb034b1aa1607faa8ccc434d393a8da1986227729e0d741703fca2e8ee4",
+      "rms": 0.029516758788102514
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "brownian",
+      "scenario": "custom instrument defaults",
+      "hash": "cd99e3d7ad4a0295043519ddb18b8489d55105afcc7e063bf9d3f2f8f6eef946",
+      "rms": 0.02503084502799304
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [12],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 12",
+      "hash": "ad20faf38fed4e21bc99260e41ab527232b68ff095c013098119baf0b2de2790",
+      "rms": 0.027568311407882348
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [36],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 36",
+      "hash": "6b44dc906ecbc526d954e864802254ca1450379595bbcd12ad3144aafae010ec",
+      "rms": 0.020892873278385418
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [60],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 60",
+      "hash": "d4d461cd9e5ee44f8e3e3a0a6c3f14fd479543bcdb42cb7635347e0255a0de09",
+      "rms": 0.01583383684519764
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [84],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "pitch 84",
+      "hash": "bd93ea9dedab6e1af68785c9564075ed3a85db97d107c7fdfd55cd7586716de5",
+      "rms": 0.011999804612377842
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 7,
+      "volume": 0.33,
+      "pan": 0,
+      "attack": 0.0263,
+      "release": -0.0625,
+      "mode": "pattern",
+      "notes": [
+        {
+          "pitches": [36, 43, 48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 6,
+              "pitchBend": 7,
+              "volume": 35
+            },
+            {
+              "tick": 12,
+              "pitchBend": 7,
+              "volume": 65
+            }
+          ]
+        },
+        {
+          "pitches": [60],
+          "points": [
+            {
+              "tick": 18,
+              "pitchBend": 0,
+              "volume": 60
+            },
+            {
+              "tick": 24,
+              "pitchBend": -5,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "key, volume, chords, bends and expression",
+      "hash": "90a8d4445e804ce2a67b26e650fda99c414aa40895c04c6e3ab924cb2df59cf9",
+      "rms": 0.004543311313032693
+    },
+    {
+      "sampleRate": 48000,
+      "seed": 12345,
+      "seconds": 0.6,
+      "key": 0,
+      "volume": 0.8,
+      "pan": 0,
+      "attack": 0.003,
+      "release": 0.08,
+      "mode": "audition",
+      "notes": [
+        {
+          "pitches": [48],
+          "points": [
+            {
+              "tick": 0,
+              "pitchBend": 0,
+              "volume": 100
+            },
+            {
+              "tick": 12,
+              "pitchBend": 0,
+              "volume": 100
+            }
+          ]
+        }
+      ],
+      "noise": "retro",
+      "scenario": "live audition and release",
+      "hash": "d560b54169b462c412ddcbb802dcd2b55ca3e567153208282f4f05d845c4fedf",
+      "rms": 0.01818830295035415
+    }
+  ],
+  "method": "Rendered pinned UltraBox source before master processing with seeded RNG. The complex source cases disable panning so fixtures isolate synthesis; shared effect tests cover panning."
+}

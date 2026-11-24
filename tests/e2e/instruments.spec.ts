@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import {
@@ -16,6 +16,11 @@ const chooseType = async (page: Page, type: string): Promise<void> => {
   await dialog.getByRole("button", { name: "Custom Instruments", exact: true }).click();
   await dialog.getByRole("button", { name: type, exact: true }).click();
   await expect(dialog).not.toBeVisible();
+};
+
+const openEffects = async (panel: Locator): Promise<Locator> => {
+  await panel.getByRole("button", { name: "Add Effect…", exact: true }).click();
+  return panel.getByRole("dialog", { name: "Add Effect", exact: true });
 };
 
 test.beforeEach(async ({ page }) => {
@@ -126,15 +131,16 @@ test("FM replaces the oscillator type and keeps independent custom cycles and tu
 
 test("Quick Effects repeat independently and Monoize has no parameters", async ({ page }) => {
   const panel = page.getByRole("region", { name: "Instrument Settings", exact: true });
-  const addEffect = panel.getByRole("combobox", { name: "Add Effect", exact: true });
-  await panel.getByRole("button", { name: "Add Effect…", exact: true }).click();
-  await expect(addEffect).toHaveValue("");
-  await addEffect.selectOption("Echo");
-  await expect(addEffect).toHaveValue("");
-  await page
-    .getByRole("dialog", { name: "Add Effect", exact: true })
-    .getByRole("button", { name: "Done", exact: true })
-    .click();
+  const dialog = await openEffects(panel);
+  const sidebar = dialog.getByRole("navigation", { name: "Effect categories" });
+  const search = dialog.getByRole("searchbox", { name: "Search effect categories" });
+  await page.keyboard.type("  ECHO ");
+  await expect(search).toHaveValue("  ECHO ");
+  await expect(sidebar.getByRole("button")).toHaveText(["All"]);
+  const delay = dialog.getByRole("region", { name: "Delay/reverb", exact: true });
+  await expect(delay.getByRole("button")).toHaveText(["Echo"]);
+  await delay.getByRole("button", { name: "Echo", exact: true }).click();
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
   let cards = panel
     .locator(".effect-card")
     .filter({ has: page.getByRole("heading", { name: "Echo", exact: true }) });
@@ -158,13 +164,15 @@ test("Quick Effects repeat independently and Monoize has no parameters", async (
   await expect(
     cards.last().getByRole("button", { name: "Bypass Echo 2", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await panel.getByRole("button", { name: "Add Effect…", exact: true }).click();
-  await expect(addEffect).toHaveValue("");
-  await addEffect.selectOption("Monoize");
-  await page
-    .getByRole("dialog", { name: "Add Effect", exact: true })
-    .getByRole("button", { name: "Done", exact: true })
-    .click();
+  await openEffects(panel);
+  await expect(search).toBeFocused();
+  await expect(search).toHaveValue("");
+  const stereo = sidebar.getByRole("button", { name: "Stereo", exact: true });
+  await stereo.click();
+  await expect(stereo).toHaveAttribute("aria-pressed", "true");
+  await expect(delay).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Monoize", exact: true }).click();
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
   const mono = panel
     .locator(".effect-card")
     .filter({ has: page.getByRole("heading", { name: "Monoize", exact: true }) });
@@ -196,12 +204,9 @@ test("the chip Wave picker keeps its wave when opening and closing Add Assets", 
 
 test("Chorus has one persistent percentage slider", async ({ page }) => {
   const panel = page.getByRole("region", { name: "Instrument Settings", exact: true });
-  await panel.getByRole("button", { name: "Add Effect…", exact: true }).click();
-  await panel.getByRole("combobox", { name: "Add Effect", exact: true }).selectOption("Chorus");
-  await page
-    .getByRole("dialog", { name: "Add Effect", exact: true })
-    .getByRole("button", { name: "Done", exact: true })
-    .click();
+  const dialog = await openEffects(panel);
+  await dialog.getByRole("button", { name: "Chorus", exact: true }).click();
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
   const card = panel
     .locator(".effect-card")
     .filter({ has: page.getByRole("heading", { name: "Chorus", exact: true }) });
@@ -412,12 +417,9 @@ test("Automation lane targets can be changed independently and rebound after eff
   await expect(panel.getByRole("spinbutton", { name: "Point 1 value", exact: true })).toHaveValue(
     "210",
   );
-  await panel.getByRole("button", { name: "Add Effect…", exact: true }).click();
-  await panel.getByRole("combobox", { name: "Add Effect", exact: true }).selectOption("Echo");
-  await page
-    .getByRole("dialog", { name: "Add Effect", exact: true })
-    .getByRole("button", { name: "Done", exact: true })
-    .click();
+  const dialog = await openEffects(panel);
+  await dialog.getByRole("button", { name: "Echo", exact: true }).click();
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
   await expect(firstTarget).toHaveValue("tempo");
   await addLane.click();
   const target = lanes.nth(1).getByRole("combobox", { name: "Target", exact: true });
@@ -616,14 +618,10 @@ test("instrument picker stays outside the shared controls group and EQ graphs be
       .evaluate((element) => element.closest(".settings-group") === null),
   ).toBe(true);
   await expect(panel.getByRole("button", { name: "EQ Filter graph", exact: true })).toHaveCount(0);
-  await panel.getByRole("button", { name: "Add Effect…", exact: true }).click();
-  const add = panel.getByRole("combobox", { name: "Add Effect", exact: true });
-  await expect(add.locator("option").filter({ hasText: /^Note Filter$/u })).toHaveCount(0);
-  await add.selectOption("EQ");
-  await page
-    .getByRole("dialog", { name: "Add Effect", exact: true })
-    .getByRole("button", { name: "Done", exact: true })
-    .click();
+  const dialog = await openEffects(panel);
+  await expect(dialog.getByRole("button", { name: "Note Filter", exact: true })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "EQ", exact: true }).click();
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
   const card = panel
     .locator(".effect-card")
     .filter({ has: page.getByRole("heading", { name: "EQ", exact: true }) });

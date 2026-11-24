@@ -60,61 +60,85 @@ import type { AssetView } from "./resource-identity";
 import { resourceCacheKey } from "./resource-identity";
 import { noises } from "./synth/noise";
 
-// Native modal provides focus trapping, Escape dismissal and focus restoration.
-const SettingsDialog = (props: {
-  readonly title: string;
-  readonly children: JSX.Element;
-}): JSX.Element => {
+const EffectPicker = (props: { readonly onChoose: (name: string) => void }): JSX.Element => {
+  const [open, setOpen] = createSignal(false);
   let dialog: HTMLDialogElement | null = null;
+  createEffect(() => {
+    if (open() && dialog) {
+      dialog.showModal();
+      focusDialogSearch(dialog);
+    }
+  });
+  const categories = Object.entries(EFFECT_GROUPS).map(([title, names]) => ({
+    title,
+    items: names.map((name) => ({
+      label: name,
+      render: (): JSX.Element => (
+        <button
+          type="button"
+          class="control"
+          onClick={() => {
+            props.onChoose(name);
+          }}
+        >
+          {name}
+        </button>
+      ),
+    })),
+  }));
   return (
     <>
       <button
         type="button"
         class="control"
-        aria-label={`${props.title}…`}
+        aria-label="Add Effect…"
         title="Add another way to shape the sound"
         onClick={() => {
-          dialog?.showModal();
+          setOpen(true);
         }}
       >
         <Icon name="plus" />
       </button>
-      <dialog
-        ref={(element) => {
-          dialog = element;
-        }}
-        class="dialog settings-dialog"
-        aria-label={props.title}
-      >
-        <header>
-          <h2>{props.title}</h2>
-          <button
-            type="button"
-            class="control small"
-            aria-label="Close dialog"
-            title="Return to the instrument editor"
-            onClick={() => {
-              dialog?.close();
-            }}
-          >
-            <Icon name="x" />
-          </button>
-        </header>
-        {props.children}
-        <div class="dialog-actions">
-          <button
-            title="Keep the changes and return to the editor"
-            type="button"
-            class="control accent"
-            onClick={() => {
-              dialog?.close();
-            }}
-          >
-            <Icon name="check" leading />
-            Done
-          </button>
-        </div>
-      </dialog>
+      <Show when={open()}>
+        <dialog
+          ref={(element) => {
+            dialog = element;
+          }}
+          class="dialog effect-picker"
+          aria-label="Add Effect"
+          on:close={() => {
+            setOpen(false);
+          }}
+        >
+          <div class="dialog-heading">
+            <h2>Add Effect</h2>
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="Close dialog"
+              title="Return to the editor"
+              onClick={() => {
+                dialog?.close();
+              }}
+            >
+              <Icon name="x" />
+            </button>
+          </div>
+          <CategoryBrowser label="Effect categories" filterTabs categories={categories} />
+          <div class="dialog-actions">
+            <button
+              type="button"
+              class="control accent"
+              onClick={() => {
+                dialog?.close();
+              }}
+            >
+              <Icon name="check" leading />
+              Done
+            </button>
+          </div>
+        </dialog>
+      </Show>
     </>
   );
 };
@@ -299,32 +323,11 @@ const EffectChain = (
           >
             <Icon name="clipboard" />
           </button>
-          <SettingsDialog title="Add Effect">
-            <SelectWrap class="wide">
-              <select
-                class="control"
-                aria-label="Add Effect"
-                title="Add another way to shape the sound"
-                onChange={(event) => {
-                  const select = event.currentTarget;
-                  const { value } = select;
-                  select.value = "";
-                  if (value) {
-                    props.onChange([...props.effects, createInstrumentEffect(value)]);
-                  }
-                }}
-              >
-                <option value="">Add Effect</option>
-                <Index each={Object.entries(EFFECT_GROUPS)}>
-                  {(effectGroup) => (
-                    <optgroup label={effectGroup()[0]}>
-                      <Index each={effectGroup()[1]}>{(name) => <option>{name()}</option>}</Index>
-                    </optgroup>
-                  )}
-                </Index>
-              </select>
-            </SelectWrap>
-          </SettingsDialog>
+          <EffectPicker
+            onChoose={(name) => {
+              props.onChange([...props.effects, createInstrumentEffect(name)]);
+            }}
+          />
         </div>
       </div>
       {props.effects.length > 0 && (

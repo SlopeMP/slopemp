@@ -1707,12 +1707,11 @@ input[type="range"]:focus-visible {
   outline: 2px solid #c0b6ff;
   outline-offset: 2px;
 }
-.settings-dialog {
+.effect-picker {
   margin: auto;
-  width: min(620px, calc(100vw - 32px));
-  background: var(--panel-surface);
+  max-width: calc(100% - 36px);
 }
-.settings-dialog::backdrop {
+.effect-picker::backdrop {
   background: #000b;
 }
 .channel-region {
@@ -2257,7 +2256,7 @@ input.graph-input {
 }
 
 /* Category dialogs share equal columns, section dividers, and comfortable rows. */
-.dialog:has(> .category-browser) {
+.dialog[open]:has(> .category-browser) {
   display: flex;
   flex-direction: column;
   width: min(100%, 760px);

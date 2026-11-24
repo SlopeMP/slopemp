@@ -2477,7 +2477,7 @@ const laneDefinitions = (
       {
         label: "Song: Tempo",
         value: "tempo",
-        min: 30,
+        min: 1,
         max: 300,
         unit: "BPM",
         base: 150,

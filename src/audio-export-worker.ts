@@ -167,7 +167,7 @@ export const renderAudioExport = async (
         ? await createMp3Encoder(command.sampleRate)
         : createWavEncoder(command.sampleRate);
     const maxSamples =
-      Math.ceil(((command.sequence.length * song.beatsPerBar * 60) / 30) * command.sampleRate) +
+      Math.ceil(command.sequence.length * song.beatsPerBar * 60 * command.sampleRate) +
       command.sampleRate;
     let total = 0;
     while (renderer.playing) {

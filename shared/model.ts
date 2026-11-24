@@ -334,7 +334,7 @@ export const validateSong: (song: unknown) => asserts song is Song = (song) => {
     throw new Error("A song must contain a track.");
   }
   for (const [name, value, min, max] of [
-    ["tempo", song.tempo, 30, 300],
+    ["tempo", song.tempo, 1, 300],
     ["beats per bar", song.beatsPerBar, 1, 64],
     ["song length", song.barCount, 1, Number.MAX_SAFE_INTEGER],
     ["pattern count", song.patternCount, 1, Number.MAX_SAFE_INTEGER],

@@ -211,7 +211,7 @@ const initialGlobals = (song: Song): EffectiveGlobals => ({
 const applyGlobalLane = (result: EffectiveGlobals, target: string, value: number): void => {
   switch (target) {
     case "tempo": {
-      result.tempo = clamp(value, 30, 300);
+      result.tempo = clamp(value, 1, 300);
       break;
     }
     case "volume": {
@@ -948,7 +948,7 @@ const delaySeconds = (
 ): number => {
   const time = effectNumber(effect, overrides, "time", 0.25);
   return TEMPO_DELAY_EFFECTS.has(effect.type) && effect.parameters["timeBasis"] === "Beats"
-    ? (time * 60) / clamp(tempo, 30, 300)
+    ? (time * 60) / clamp(tempo, 1, 300)
     : time;
 };
 const simpleDelay =

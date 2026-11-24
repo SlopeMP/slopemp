@@ -2236,9 +2236,9 @@ export const App = (initial: EditorStartup): JSX.Element => {
                       class="tempo-slider"
                       aria-label="Coarse tempo"
                       type="range"
-                      min={30}
+                      min={1}
                       max={300}
-                      step={5}
+                      step={1}
                       value={song().tempo}
                       disabled={disabled()}
                       onInput={(e) => {
@@ -2260,13 +2260,13 @@ export const App = (initial: EditorStartup): JSX.Element => {
                       class="control numeric"
                       aria-label="Tempo"
                       type="number"
-                      min={30}
+                      min={1}
                       max={300}
                       value={song().tempo}
                       disabled={disabled()}
                       onInput={(e) => {
                         edit((s) => {
-                          s.tempo = clamp(Math.round(Number(e.target.value)), 30, 300);
+                          s.tempo = clamp(Math.round(Number(e.target.value)), 1, 300);
                         });
                       }}
                     />

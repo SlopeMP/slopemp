@@ -1025,7 +1025,7 @@ export const importMidi = (input: ArrayBuffer | Uint8Array): Song => {
           if (microseconds > 0) {
             tempos.push({
               beat: tick / division,
-              tempo: Math.max(30, Math.min(300, 60_000_000 / microseconds)),
+              tempo: Math.max(1, Math.min(300, 60_000_000 / microseconds)),
             });
           }
         } else if (kind === 88 && size >= 2) {

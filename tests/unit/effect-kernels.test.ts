@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 
 import { prepareEffectProcessor, processEffect, resetEffects } from "../../src/audio";
 import { createEffect } from "../../src/instruments";
+import { required } from "../../src/model";
 
 // Recorded before splitting the processor. Hash every stereo sample, including
 // in-place edits, overrides/restoration, type switches, sample-rate edits, tails
@@ -14,11 +15,11 @@ for (const { type, hash } of [
   },
   {
     type: "Overdrive",
-    hash: "36e8ec4382aab283c2fc19a66ad72c7e9d93f05cb1e17f2459b3a2ce6bf4d867",
+    hash: "c0da537247c3a4bb5d80283266573859b41a22ef0d4c7561f1493f2e76704cd6",
   },
   {
     type: "Soft Clipping",
-    hash: "36e8ec4382aab283c2fc19a66ad72c7e9d93f05cb1e17f2459b3a2ce6bf4d867",
+    hash: "c0da537247c3a4bb5d80283266573859b41a22ef0d4c7561f1493f2e76704cd6",
   },
   {
     type: "Hard Clipping",
@@ -140,7 +141,13 @@ for (const { type, hash } of [
   for (const mode of ["public", "bound"]) {
     test(`${type} ${mode} preserves every sample across control and processor changes`, () => {
       const effect = createEffect(type);
-      const output = new Float64Array(1024 * 2);
+      // Math.tanh can differ in its final double-precision bits across engines.
+      // Check these shapers at the Float32 precision delivered to the worklet;
+      // the independent curve fixtures below also check double precision.
+      const output =
+        type === "Overdrive" || type === "Soft Clipping"
+          ? new Float32Array(1024 * 2)
+          : new Float64Array(1024 * 2);
       let render = prepareEffectProcessor(effect, 1000);
       for (let frame = 0; frame < 1024; frame++) {
         if (frame === 128) {
@@ -206,6 +213,47 @@ for (const { type, hash } of [
         [output[frame * 2], output[frame * 2 + 1]] = pair;
       }
       expect(createHash("sha256").update(output).digest("hex")).toBe(hash);
+    });
+  }
+}
+
+// Calculated with 70-digit decimal arithmetic, independently of Math.tanh.
+// Cover the linear region, knee and saturation at zero, default and maximum drive.
+for (const type of ["Overdrive", "Soft Clipping"]) {
+  for (const mode of ["public", "bound"]) {
+    test(`${type} ${mode} matches the high-precision transfer curve`, () => {
+      const effect = createEffect(type);
+      const render = prepareEffectProcessor(effect, 44_100);
+      const inputs = [0.001, 0.25, 1, 4];
+      for (const { drive, expected } of [
+        {
+          drive: 0,
+          expected: [
+            0.0009999996666668, 0.24491866240370913, 0.7615941559557649, 0.999329299739067,
+          ],
+        },
+        {
+          drive: 6,
+          expected: [
+            0.0014125356701546552, 0.3264940913740111, 0.6822412113171794, 0.7079456188915154,
+          ],
+        },
+        {
+          drive: 40,
+          expected: [0.009966799462495582, 0.1, 0.1, 0.1],
+        },
+      ]) {
+        effect.parameters["drive"] = drive;
+        for (const [index, input] of inputs.entries()) {
+          const output =
+            mode === "bound"
+              ? render([input, -input], 0)
+              : processEffect([input, -input], effect, 44_100, 0);
+          const value = required(expected[index]);
+          expect(output[0]).toBeCloseTo(value, 14);
+          expect(output[1]).toBeCloseTo(-value, 14);
+        }
+      }
     });
   }
 }

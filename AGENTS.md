@@ -4,7 +4,7 @@ Resolve routine implementation choices independently. Ask only when missing info
 
 Keep changes focused on the user's goal. Finish authorized work, handle failures, and report what changed, how it was verified, and any remaining blockers. Never claim a check passed unless it ran successfully.
 
-NEVER diagnose an issue as pre-existing, especially when it comes to lints/formatting.
+NEVER diagnose an issue as pre-existing, especially when it comes to lints/formatting. Don't leave tests failing at the end of your turn.
 
 # Commits throughout the work
 

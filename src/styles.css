@@ -2444,10 +2444,16 @@ input.graph-input {
 }
 
 .multiplayer-status {
+  display: grid;
+  place-items: center;
   position: fixed;
   bottom: 10px;
   right: 10px;
   z-index: 31;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
 }
 .multiplayer-dialog,
 .multiplayer-dialog form,
@@ -2461,26 +2467,32 @@ input.graph-input {
 .multiplayer-dialog label > input {
   width: 100%;
 }
-.multiplayer-dialog h3,
-.multiplayer-dialog p,
-.connected-editors {
+.multiplayer-dialog p {
   margin: 0;
 }
-.server-address {
-  overflow-wrap: anywhere;
-}
-.connected-editors {
-  list-style: none;
-  padding: 0;
-}
-.connected-editors li {
+.connection-summary {
   display: flex;
-  gap: 8px;
   align-items: center;
-  padding-block: 3px;
+  gap: 8px;
+  min-width: 0;
 }
-.editor-location {
-  color: var(--disabled-ink);
+.connection-summary > span {
+  flex-shrink: 0;
+}
+.server-address {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--surface-edge);
+  border-radius: 4px;
+  background: var(--editor-surface);
+  color: var(--ink);
+  font-family: monospace;
+  font-weight: 400;
+}
+.server-address:focus-visible {
+  outline: 2px solid var(--editor-selection-edge);
+  outline-offset: 2px;
 }
 .editor-color {
   display: inline-block;

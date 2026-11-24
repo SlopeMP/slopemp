@@ -2409,7 +2409,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
             open("multiplayer");
           }}
         >
-          {connectionLabel(multiplayer())}
+          <Icon name="users" />
         </button>
       ) : null}
       {status() ? (

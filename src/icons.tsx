@@ -42,6 +42,7 @@ import settings from "@tabler/icons/outline/settings.svg" with { type: "text" };
 import sparkles from "@tabler/icons/outline/sparkles.svg" with { type: "text" };
 import star from "@tabler/icons/outline/star.svg" with { type: "text" };
 import trash from "@tabler/icons/outline/trash.svg" with { type: "text" };
+import users from "@tabler/icons/outline/users.svg" with { type: "text" };
 import volumeOff from "@tabler/icons/outline/volume-off.svg" with { type: "text" };
 import volume from "@tabler/icons/outline/volume.svg" with { type: "text" };
 import waveSine from "@tabler/icons/outline/wave-sine.svg" with { type: "text" };
@@ -97,6 +98,7 @@ const icons = {
   star,
   "star-filled": starFilled,
   trash,
+  users,
   volume,
   "volume-off": volumeOff,
   "wave-sine": waveSine,

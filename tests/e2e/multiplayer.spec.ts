@@ -47,14 +47,27 @@ test("joins only on request, shares edits and selections, and disconnects to loc
     await expect(page.getByRole("alert")).toHaveText("Incorrect server password.");
     await expect(tempo(page)).toHaveValue("150");
     await join(page, address, "studio key");
-    await expect(page.getByText(address, { exact: true })).toBeVisible();
+    const serverAddress = page.getByRole("textbox", { name: "Connected server address" });
+    await expect(serverAddress).toHaveValue(address);
+    await expect(serverAddress).toHaveAttribute("readonly", "");
+    await expect(page.getByText("You're the only editor", { exact: true })).toBeVisible();
     await expect(tempo(page)).toHaveValue("132");
 
     await showConnection(collaborator);
     await join(collaborator, address, "studio key");
     await expect(tempo(collaborator)).toHaveValue("132");
-    await expect(page.getByRole("listitem").filter({ hasText: "You" })).toHaveCount(1);
-    await expect(page.getByRole("listitem").filter({ hasText: /Editor /u })).toHaveCount(1);
+    await expect(page.getByText("1 other editor", { exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("list")).toHaveCount(0);
+    const thirdEditor = await context.newPage();
+    try {
+      await thirdEditor.goto("./");
+      await showConnection(thirdEditor);
+      await join(thirdEditor, address, "studio key");
+      await expect(page.getByText("2 other editors", { exact: true })).toBeVisible();
+    } finally {
+      await thirdEditor.close();
+    }
+    await expect(page.getByText("1 other editor", { exact: true })).toBeVisible();
     await dismiss(page);
     await dismiss(collaborator);
     const pause = page.getByRole("button", { name: "Pause", exact: true });
@@ -136,7 +149,7 @@ test("recording holds a track lock through count-in and releases it when stopped
       await editor.goto("./");
       await showConnection(editor);
       await join(editor, server.address, "");
-      await expect(editor.getByRole("dialog").getByRole("status")).toHaveText("Connected");
+      await expect(editor.getByRole("dialog").getByRole("status")).toHaveText("Connected to");
       await dismiss(editor);
     }
     const otherTrack = collaborator.getByTestId("cell-1-0");
@@ -173,7 +186,7 @@ test("enlarged sound editors hold their own instrument lock until closed", async
       await editor.goto("./");
       await showConnection(editor);
       await join(editor, server.address, "");
-      await expect(editor.getByRole("dialog").getByRole("status")).toHaveText("Connected");
+      await expect(editor.getByRole("dialog").getByRole("status")).toHaveText("Connected to");
       await dismiss(editor);
     }
     await enlarge(page).click();

@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import type { JSX } from "solid-js";
 
 import { Icon } from "./icons";
@@ -20,38 +20,35 @@ export const MultiplayerDialog = (props: {
   readonly disconnect: () => void;
 }): JSX.Element => {
   const [address, setAddress] = createSignal(props.state.address ?? "");
+  const otherEditors = (): number =>
+    props.state.editors.filter((editor) => editor.id !== props.state.editorId).length;
   let password: HTMLInputElement | null = null;
   return (
     <div class="multiplayer-dialog">
-      <output>{connectionLabel(props.state)}</output>
+      <output class="connection-summary">
+        <span>
+          {connectionLabel(props.state)}
+          {props.state.status !== "offline" ? " to" : ""}
+        </span>
+        <Show when={props.state.status !== "offline"}>
+          <input
+            class="server-address"
+            aria-label="Connected server address"
+            readonly
+            value={props.state.address ?? ""}
+          />
+        </Show>
+      </output>
       <Show
         when={props.state.status === "offline"}
         fallback={
           <>
-            <p class="server-address">{props.state.address}</p>
-            <Show when={props.state.editors.length > 0}>
-              <h3>Connected editors</h3>
-              <ul class="connected-editors">
-                <For each={props.state.editors}>
-                  {(editor) => (
-                    <li>
-                      <span class="editor-color" style={{ "background-color": editor.color }} />
-                      <span>
-                        {editor.id === props.state.editorId
-                          ? "You"
-                          : `Editor ${editor.id.slice(0, 8)}`}
-                      </span>
-                      <Show when={editor.selection}>
-                        {(selection) => (
-                          <span class="editor-location">
-                            Bar {selection().bar + 1} · Pattern {selection().pattern ?? 0}
-                          </span>
-                        )}
-                      </Show>
-                    </li>
-                  )}
-                </For>
-              </ul>
+            <Show when={props.state.status === "connected"}>
+              <p>
+                {otherEditors() === 0
+                  ? "You're the only editor"
+                  : `${otherEditors()} other editor${otherEditors() === 1 ? "" : "s"}`}
+              </p>
             </Show>
             <div class="dialog-actions">
               <button class="control" type="button" onClick={props.disconnect}>

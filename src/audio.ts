@@ -2025,7 +2025,7 @@ const prepareSoundFontVoice = (
       tuning: (g.get(51) ?? 0) * 100 + (g.get(52) ?? 0) + header.correction,
       rateCents: Number.NaN,
       playbackRate: 0,
-      gain: 10 ** (-attenuation / 200),
+      gain: 0.5 * 10 ** (-attenuation / 200),
       modEnvelope: prepareSFEnvelope(g, key, false),
       volEnvelope: prepareSFEnvelope(g, key, true),
       modPitch: g.get(5) ?? 0,

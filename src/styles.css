@@ -1618,8 +1618,10 @@ h2 {
   border-top: 1px solid var(--surface-edge);
   padding-top: 5px;
 }
-.section-heading h3 {
+.section-heading h3,
+.connection-summary > span {
   color: #9e99aa;
+  font-weight: 500;
   text-transform: uppercase;
   font-size: 10px;
   letter-spacing: 0.065em;

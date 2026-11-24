@@ -185,7 +185,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
   const assetDialogOpen = createMemo(() => dialog() === "assets" || dialog() === "favorites");
   const [assetDialogMessage, setAssetDialogMessage] = createSignal("");
   const [status, setStatus] = createSignal(initial.error || initial.favoritesError);
-  const [control, setControl] = createSignal(false);
   const [recording, setRecording] = createSignal<"count-in" | "off" | "recording">("off");
   const [layoutDraft, setLayoutDraft] = createSignal(prefs().layout);
   const [customMask, setCustomMask] = createSignal<number[]>(song().customScale);
@@ -467,13 +466,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
   const playControl = createMemo(() => {
     if (playing()) {
       return { label: "Pause", title: "Pause the song", icon: "player-pause" } as const;
-    }
-    if (control()) {
-      return {
-        label: "Record",
-        title: "Record notes into the song",
-        icon: "player-record",
-      } as const;
     }
     return { label: "Play", title: "Play the song", icon: "player-play" } as const;
   });
@@ -1426,7 +1418,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
       engine?.releaseAll();
     };
     const down = (event: KeyboardEvent): void => {
-      setControl(event.ctrlKey);
       const r = editorState();
       if (!editorLocked()) {
         history.clearPreviewInterruption();
@@ -1608,7 +1599,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
       }
     };
     const up = (event: KeyboardEvent): void => {
-      setControl(event.ctrlKey);
       const pitch = held.get(event.code);
       if (pitch !== undefined) {
         liveOff(pitch);
@@ -1985,14 +1975,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
                   aria-label={playControl().label}
                   title={playControl().title}
                   aria-pressed={playing()}
-                  disabled={disabled()}
-                  onClick={() => {
-                    if (control() && !playing()) {
-                      void startRecording();
-                    } else {
-                      togglePlay();
-                    }
-                  }}
+                  onClick={togglePlay}
                 >
                   <Icon name={playControl().icon} />
                 </button>

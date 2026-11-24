@@ -664,6 +664,24 @@ test("control press and release feedback follows pointer and keyboard activation
   await page.keyboard.up("Space");
 });
 
+test("transport buttons keep their actions while Ctrl is held", async ({ page }) => {
+  const play = page.getByRole("button", { name: "Play", exact: true });
+  const pause = page.getByRole("button", { name: "Pause", exact: true });
+  const record = page.getByRole("button", { name: "Record", exact: true });
+  const stop = page.getByRole("button", { name: "Stop Recording", exact: true });
+
+  await expect(play).toBeVisible();
+  await page.keyboard.down("Control");
+  await expect(play).toBeVisible();
+  await expect(record).toBeVisible();
+  await play.click();
+  await pause.click();
+  await record.click();
+  await stop.click();
+  await expect(play).toBeVisible();
+  await page.keyboard.up("Control");
+});
+
 test("transport keeps bar buttons fixed through playback and recording", async ({ page }) => {
   await writeStoredState(page, { preferences: { countIn: false } });
   await page.reload();

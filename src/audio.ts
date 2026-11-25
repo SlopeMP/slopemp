@@ -1825,21 +1825,19 @@ export const loadAudioResource = async (
   signal?: AbortSignal,
 ): Promise<number> => {
   signal?.throwIfAborted();
-  const context = new AudioContext();
-  try {
-    const buffer = await context.decodeAudioData(data.slice(0));
-    signal?.throwIfAborted();
-    const left = buffer.getChannelData(0);
-    registerAudioResource(
-      id,
-      left,
-      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : left,
-      buffer.sampleRate,
-    );
-    return buffer.length;
-  } finally {
-    await context.close();
-  }
+  // Saved sample and loop positions count frames, so decoding must not depend
+  // on the playback device's sample rate.
+  const context = new OfflineAudioContext(2, 1, 44_100);
+  const buffer = await context.decodeAudioData(data.slice(0));
+  signal?.throwIfAborted();
+  const left = buffer.getChannelData(0);
+  registerAudioResource(
+    id,
+    left,
+    buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : left,
+    buffer.sampleRate,
+  );
+  return buffer.length;
 };
 const sampleVoice = (
   instrument: Instrument,

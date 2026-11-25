@@ -317,5 +317,11 @@ test("recording captures only unbound keys when note playback is enabled", async
   await page.waitForTimeout(100);
   await page.keyboard.up("KeyH");
   await page.keyboard.press("Space");
-  await expect(page.getByTestId("note")).toHaveCount(2);
+  await expect
+    .poll(async () => {
+      const song = decodeSong(await page.evaluate(() => location.hash));
+      const patterns = Object.values(song.channels[0]?.patterns ?? {});
+      return new Set(patterns.flatMap(({ notes }) => notes.flatMap(({ pitches }) => pitches)));
+    })
+    .toEqual(new Set([57, 61]));
 });

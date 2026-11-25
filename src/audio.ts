@@ -1690,7 +1690,8 @@ type EffectNote = {
   visit: number;
   frame: number;
   beatOffset: number;
-  livePitch: number | undefined;
+  livePitches: readonly number[];
+  liveNoteIds: readonly number[];
 };
 type VoiceSlot = { id: string; voice: Voice | undefined };
 type SoundFontSend = {
@@ -3382,18 +3383,24 @@ export class SongRenderer {
     ) {
       return undefined;
     }
-    const note = this.playing ? this.findActiveNote(track) : undefined;
     const livePitch = livePitches.at(-1);
+    const note = this.playing && livePitch === undefined ? this.findActiveNote(track) : undefined;
     let state = this.effectNotes.get(instrument.id);
+    const liveNoteIds =
+      state?.livePitches === livePitches
+        ? state.liveNoteIds
+        : livePitches.map((pitch) => required(this.liveNoteIds.get(pitch)));
+    const continuingLive =
+      livePitch !== undefined &&
+      (state?.liveNoteIds.some((id) => liveNoteIds.includes(id)) ?? false);
+    const changed =
+      livePitch !== undefined
+        ? !continuingLive
+        : (state?.liveNoteIds.length ?? 0) > 0 ||
+          state?.note?.id !== note?.id ||
+          state?.visit !== this.barVisit;
     const held = note !== undefined || livePitch !== undefined;
-    if (
-      held &&
-      (state === undefined ||
-        state.voice.released !== undefined ||
-        state.note?.id !== note?.id ||
-        state.visit !== this.barVisit ||
-        state.livePitch !== livePitch)
-    ) {
+    if (held && (state === undefined || state.voice.released !== undefined || changed)) {
       const tied =
         note !== undefined &&
         state?.note !== undefined &&
@@ -3415,7 +3422,8 @@ export class SongRenderer {
       state = {
         voice,
         note,
-        livePitch,
+        livePitches,
+        liveNoteIds,
         visit: this.barVisit,
         frame: this.sampleFrame,
         beatOffset: previous
@@ -3427,6 +3435,10 @@ export class SongRenderer {
     if (!state) {
       return undefined;
     }
+    // Chord edits preserve a continuously held live envelope. Note identities
+    // still distinguish a physical off/on pair between consecutive render calls.
+    state.livePitches = livePitches;
+    state.liveNoteIds = liveNoteIds;
     const { voice } = state;
     voice.age += 1 / this.sampleRate;
     if (!held) {

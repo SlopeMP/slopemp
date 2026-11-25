@@ -1,6 +1,6 @@
 import type { EditorPresence } from "@slopemp/song/protocol";
 // See ../license/README.md for the source of editor geometry and gestures.
-import { createEffect, createMemo, createSignal, For, Index } from "solid-js";
+import { createEffect, createMemo, createSignal, For, Index, Show } from "solid-js";
 import type { JSX } from "solid-js";
 
 import { barWidth, colorsForChannel, loopPath, patternHeight } from "./editor-geometry";
@@ -14,7 +14,7 @@ type Props = {
   readonly onChannelCount: (kind: "automation" | "track", count: number) => void;
   readonly channel: number;
   readonly bar: number;
-  readonly selection: Selection;
+  readonly selection: Selection | null;
   readonly muted: Set<string>;
   readonly playhead: PlayheadSource | null;
   readonly disabled: boolean;
@@ -233,6 +233,16 @@ export const ChannelEditor = (props: Props): JSX.Element => {
   const [loopDragging, setLoopDragging] = createSignal(false);
   const [touch, setTouch] = createSignal(false);
   const [loopHover, setLoopHover] = createSignal<number | null>(null);
+  const selectedRow = (index: number): Selection | null => {
+    const range = props.selection;
+    return range && index >= range.channelStart && index <= range.channelEnd ? range : null;
+  };
+  const rectangle = (): Selection | null => {
+    const range = props.selection;
+    return range && (range.barEnd > range.barStart || range.channelEnd > range.channelStart)
+      ? range
+      : null;
+  };
   const loopMode = (pos: number): "end" | "move" | "start" => {
     if (pos > props.song.loopStart - 0.25 && pos < props.song.loopEnd + 0.25) {
       return pos - props.song.loopStart < (props.song.loopEnd - props.song.loopStart) / 2
@@ -404,16 +414,8 @@ export const ChannelEditor = (props: Props): JSX.Element => {
                       localEditor={props.localEditor}
                       index={t}
                       activeBar={props.channel === t ? props.bar : -1}
-                      selectionStart={
-                        t >= props.selection.channelStart && t <= props.selection.channelEnd
-                          ? props.selection.barStart
-                          : -1
-                      }
-                      selectionEnd={
-                        t >= props.selection.channelStart && t <= props.selection.channelEnd
-                          ? props.selection.barEnd
-                          : -1
-                      }
+                      selectionStart={selectedRow(t)?.barStart ?? -1}
+                      selectionEnd={selectedRow(t)?.barEnd ?? -1}
                       muted={props.muted.has(channel().id)}
                       disabled={props.disabled}
                     />
@@ -448,23 +450,24 @@ export const ChannelEditor = (props: Props): JSX.Element => {
                   ))}
                 </select>
               ) : null}
-              {(props.selection.barEnd > props.selection.barStart ||
-                props.selection.channelEnd > props.selection.channelStart) && (
-                <div
-                  class="channel-selection"
-                  style={{
-                    left: `${props.selection.barStart * barWidth + 65}px`,
-                    top: `${rowTop(props.selection.channelStart) + 1}px`,
-                    width: `${(props.selection.barEnd - props.selection.barStart + 1) * barWidth - 2}px`,
-                    height: `${
-                      rowTop(props.selection.channelEnd) -
-                      rowTop(props.selection.channelStart) +
-                      patternHeight -
-                      2
-                    }px`,
-                  }}
-                />
-              )}
+              <Show when={rectangle()}>
+                {(range) => (
+                  <div
+                    class="channel-selection"
+                    style={{
+                      left: `${range().barStart * barWidth + 65}px`,
+                      top: `${rowTop(range().channelStart) + 1}px`,
+                      width: `${(range().barEnd - range().barStart + 1) * barWidth - 2}px`,
+                      height: `${
+                        rowTop(range().channelEnd) -
+                        rowTop(range().channelStart) +
+                        patternHeight -
+                        2
+                      }px`,
+                    }}
+                  />
+                )}
+              </Show>
             </div>
             {props.playhead ? <div ref={playhead} class="channel-playhead" /> : null}
             <div class="loop-strip">

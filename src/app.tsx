@@ -56,7 +56,11 @@ type Dialog =
   | null;
 const noteNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
 const pitchNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const emptySelection = (channel: number, bar: number): Selection => ({
+type CellPosition = { channel: number; bar: number };
+type GridBounds = Omit<Selection, "timeEnd" | "timeStart">;
+type EditorSelection =
+  { kind: "grid"; bounds: GridBounds; end: CellPosition } | { kind: "time"; time: TimeSelection };
+const cellBounds = (channel: number, bar: number): GridBounds => ({
   channelStart: channel,
   channelEnd: channel,
   barStart: bar,
@@ -168,8 +172,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
     channel: 0,
     bar: 0,
   });
-  const [rectangle, setRectangle] = createSignal<Selection>(emptySelection(0, 0));
-  const [time, setTime] = createSignal<TimeSelection | null>(null);
+  const [selectedRange, setSelectedRange] = createSignal<EditorSelection | null>(null);
   const [instrument, setInstrument] = createSignal(0);
   const [copiedEffect, setCopiedEffect] = createSignal<Effect | null>(null);
   const copyEffect = (effect: Effect): void => {
@@ -232,10 +235,6 @@ export const App = (initial: EditorStartup): JSX.Element => {
   const resourceLoads = new AssetLoads();
   let wantedResources = new Map<string, string>();
   const activeResources = new Map<string, string>();
-  let selectionEnd = {
-    channel: current().channel,
-    bar: current().bar,
-  };
   const channelIndex = createMemo(() => Math.min(current().channel, song().channels.length - 1));
   const bar = createMemo(() => Math.min(current().bar, song().barCount - 1));
   const channel = createMemo(() => required(song().channels[channelIndex()]));
@@ -243,13 +242,26 @@ export const App = (initial: EditorStartup): JSX.Element => {
     Math.min(instrument(), Math.max(0, channel().instruments.length - 1)),
   );
   const octave = createMemo(() => trackOctave(channel()));
+  const time = createMemo(() => {
+    const range = selectedRange();
+    return range?.kind === "time" ? range.time : null;
+  });
+  const gridSelection = createMemo<GridBounds | null>(() => {
+    const range = selectedRange();
+    if (range?.kind !== "grid") {
+      return null;
+    }
+    return {
+      channelStart: Math.min(range.bounds.channelStart, song().channels.length - 1),
+      channelEnd: Math.min(range.bounds.channelEnd, song().channels.length - 1),
+      barStart: Math.min(range.bounds.barStart, song().barCount - 1),
+      barEnd: Math.min(range.bounds.barEnd, song().barCount - 1),
+    };
+  });
   const selection = createMemo<Selection>(() => {
     const selectedTime = time();
     return {
-      channelStart: Math.min(rectangle().channelStart, song().channels.length - 1),
-      channelEnd: Math.min(rectangle().channelEnd, song().channels.length - 1),
-      barStart: Math.min(rectangle().barStart, song().barCount - 1),
-      barEnd: Math.min(rectangle().barEnd, song().barCount - 1),
+      ...(gridSelection() ?? cellBounds(channelIndex(), bar())),
       ...(selectedTime
         ? {
             timeStart: selectedTime.start,
@@ -258,12 +270,28 @@ export const App = (initial: EditorStartup): JSX.Element => {
         : null),
     };
   });
+  const clearSelection = (): void => {
+    setSelectedRange(null);
+  };
+  const setGridSelection = (bounds: GridBounds, end?: CellPosition): void => {
+    setSelectedRange({
+      kind: "grid",
+      bounds,
+      end: end ?? { channel: channelIndex(), bar: bar() },
+    });
+  };
+  const selectTime = (range: TimeSelection | null): void => {
+    if (range) {
+      setSelectedRange({ kind: "time", time: range });
+    } else if (time()) {
+      clearSelection();
+    }
+  };
   const editorState = createMemo(() => ({
     song: song(),
     prefs: prefs(),
     channelIndex: channelIndex(),
     bar: bar(),
-    selection: selection(),
     dialog: dialog(),
     recording: recording(),
     playing: playing(),
@@ -297,7 +325,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
         submit: (transaction, lock) => multiplayerClient.submit(transaction, lock),
         onError: notify,
       });
-      setTime(null);
+      selectTime(null);
       setInstrument(0);
     } else if (joined && state.status === "offline") {
       joined = false;
@@ -407,16 +435,11 @@ export const App = (initial: EditorStartup): JSX.Element => {
     return history.canRedo;
   });
   const captureContext = (): {
-    current: {
-      channel: number;
-      bar: number;
-    };
-    rectangle: Selection;
+    current: CellPosition;
     time: TimeSelection | null;
     instrument: number;
   } => ({
     current: current(),
-    rectangle: rectangle(),
     time: time(),
     instrument: instrument(),
   });
@@ -511,11 +534,10 @@ export const App = (initial: EditorStartup): JSX.Element => {
         ...c,
         bar: nextBar,
       }));
-      setRectangle((r) =>
-        r.channelStart === r.channelEnd && r.barStart === r.barEnd
-          ? emptySelection(channelIndex(), nextBar)
-          : r,
-      );
+      const range = gridSelection();
+      if (range && range.channelStart === range.channelEnd && range.barStart === range.barEnd) {
+        setGridSelection(cellBounds(channelIndex(), nextBar));
+      }
     }
   };
   const launch = (action: () => Promise<unknown>, onFailure?: () => void): void => {
@@ -582,8 +604,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
       channel: 0,
       bar: 0,
     });
-    setRectangle(emptySelection(0, 0));
-    setTime(null);
+    clearSelection();
     setInstrument(0);
     setPosition({
       bar: 0,
@@ -592,43 +613,32 @@ export const App = (initial: EditorStartup): JSX.Element => {
     engine?.pause();
     setPlaying(false);
   };
-  const select = (t: number, b: number, extend = false): void => {
+  const extend = (t: number, b: number): void => {
+    setGridSelection(
+      {
+        channelStart: Math.min(channelIndex(), t),
+        channelEnd: Math.max(channelIndex(), t),
+        barStart: Math.min(bar(), b),
+        barEnd: Math.max(bar(), b),
+      },
+      { channel: t, bar: b },
+    );
+  };
+  const select = (t: number, b: number, extendSelection = false): void => {
     if (editorState().recording !== "off") {
       return;
     }
-    if (extend) {
-      setRectangle({
-        channelStart: Math.min(current().channel, t),
-        channelEnd: Math.max(current().channel, t),
-        barStart: Math.min(current().bar, b),
-        barEnd: Math.max(current().bar, b),
-      });
+    if (extendSelection) {
+      extend(t, b);
       return;
     }
     engine?.releaseAll();
-    selectionEnd = {
-      channel: t,
-      bar: b,
-    };
     setCurrent({
       channel: t,
       bar: b,
     });
     setInstrument(0);
-    setRectangle(emptySelection(t, b));
-    setTime(null);
-  };
-  const extend = (t: number, b: number): void => {
-    selectionEnd = {
-      channel: t,
-      bar: b,
-    };
-    setRectangle({
-      channelStart: Math.min(current().channel, t),
-      channelEnd: Math.max(current().channel, t),
-      barStart: Math.min(current().bar, b),
-      barEnd: Math.max(current().bar, b),
-    });
+    setGridSelection(cellBounds(t, b));
   };
   const stopRecording = (): void => {
     const data = recordData;
@@ -853,26 +863,37 @@ export const App = (initial: EditorStartup): JSX.Element => {
       }
     });
   };
+  const editSelection = (
+    apply: (draft: Song, target: Selection) => void,
+    { keepTimeSelection = false } = {},
+  ): void => {
+    const target = selection();
+    if (!keepTimeSelection || target.timeStart === undefined) {
+      clearSelection();
+    }
+    edit((draft) => {
+      apply(draft, target);
+    });
+  };
   const command = (name: string): void => {
     if (recording() !== "off" || (editorLocked() && name !== "Multiplayer…")) {
       return;
     }
-    const execute = (fn: (s: Song, selection: Selection) => void): void => {
-      edit((s) => {
-        fn(s, selection());
-      });
-    };
     switch (name) {
       case "Multiplayer…": {
         open("multiplayer");
         return;
       }
-      case "Undo": {
-        history.undo();
-        break;
-      }
+      case "Undo":
       case "Redo": {
-        history.redo();
+        if (gridSelection()) {
+          clearSelection();
+        }
+        if (name === "Undo") {
+          history.undo();
+        } else {
+          history.redo();
+        }
         break;
       }
       case "New Blank Song": {
@@ -898,19 +919,19 @@ export const App = (initial: EditorStartup): JSX.Element => {
       }
       case "Copy": {
         copyClipboard(ops.copyPatterns(song(), selection()), "pattern");
-        setTime(null);
+        clearSelection();
         break;
       }
       case "Cut": {
         copyClipboard(ops.copyPatterns(song(), selection()), "pattern");
-        execute((s, selected) => {
-          ops.cutPatterns(s, selected);
+        editSelection((draft, target) => {
+          ops.cutPatterns(draft, target);
         });
-        setTime(null);
         break;
       }
       case "Paste": {
         const destination = selection();
+        clearSelection();
         pasteClipboard(storage.loadClipboard(), (draft, data) => {
           const warnings = ops.pastePatterns(draft, destination, data);
           if (warnings.length > 0) {
@@ -920,68 +941,74 @@ export const App = (initial: EditorStartup): JSX.Element => {
         break;
       }
       case "Insert Bar": {
-        execute(ops.insertBars);
+        editSelection(ops.insertBars);
         break;
       }
       case "Insert Channel Below": {
+        clearSelection();
         edit((s) => {
           ops.insertChannelBelow(s, channelIndex());
         });
         break;
       }
       case "Delete Selected Bars": {
-        execute(ops.deleteBars);
-        setTime(null);
+        editSelection(ops.deleteBars);
         break;
       }
       case "Delete Selected Channels": {
-        execute(ops.deleteChannels);
+        editSelection(ops.deleteChannels);
         break;
       }
       case "Select All": {
-        setTime(null);
-        setRectangle(
-          selection().barStart === 0 &&
-            selection().barEnd === song().barCount - 1 &&
-            selection().channelStart === 0 &&
-            selection().channelEnd === song().channels.length - 1
-            ? emptySelection(channelIndex(), bar())
-            : {
-                channelStart: 0,
-                channelEnd: song().channels.length - 1,
-                barStart: 0,
-                barEnd: song().barCount - 1,
-              },
-        );
+        const selected = gridSelection();
+        const lastBar = song().barCount - 1;
+        const lastChannel = song().channels.length - 1;
+        if (
+          selected?.barStart === 0 &&
+          selected.barEnd === lastBar &&
+          selected.channelStart === 0 &&
+          selected.channelEnd === lastChannel
+        ) {
+          clearSelection();
+        } else {
+          setGridSelection({
+            channelStart: 0,
+            channelEnd: lastChannel,
+            barStart: 0,
+            barEnd: lastBar,
+          });
+        }
         break;
       }
       case "Select Channel": {
-        setTime(null);
-        setRectangle({
-          ...selection(),
-          barStart:
-            selection().barStart === 0 && selection().barEnd === song().barCount - 1 ? bar() : 0,
-          barEnd:
-            selection().barStart === 0 && selection().barEnd === song().barCount - 1
-              ? bar()
-              : song().barCount - 1,
-        });
+        const selected = gridSelection();
+        const { channelStart, channelEnd } = selected ?? cellBounds(channelIndex(), bar());
+        const lastBar = song().barCount - 1;
+        const wholeChannel = selected?.barStart === 0 && selected.barEnd === lastBar;
+        if (wholeChannel && channelStart === channelEnd) {
+          clearSelection();
+        } else {
+          setGridSelection({
+            channelStart,
+            channelEnd,
+            barStart: wholeChannel ? bar() : 0,
+            barEnd: wholeChannel ? bar() : lastBar,
+          });
+        }
         break;
       }
       case "Duplicate Reused Patterns": {
-        execute(ops.duplicateReusedPatterns);
+        editSelection(ops.duplicateReusedPatterns);
         break;
       }
-      case "Move Notes Up": {
-        edit((s) => {
-          ops.transpose(s, selection(), 1, prefs().allowOutsideScale);
-        });
-        break;
-      }
+      case "Move Notes Up":
       case "Move Notes Down": {
-        edit((s) => {
-          ops.transpose(s, selection(), -1, prefs().allowOutsideScale);
-        });
+        editSelection(
+          (s, target) => {
+            ops.transpose(s, target, name === "Move Notes Up" ? 1 : -1, prefs().allowOutsideScale);
+          },
+          { keepTimeSelection: true },
+        );
         break;
       }
       case "Move All Notes Sideways": {
@@ -994,11 +1021,11 @@ export const App = (initial: EditorStartup): JSX.Element => {
         break;
       }
       case "Snap Notes To Scale": {
-        execute(ops.snapToScale);
+        editSelection(ops.snapToScale, { keepTimeSelection: true });
         break;
       }
       case "Snap Notes To Rhythm": {
-        execute(ops.snapToRhythm);
+        editSelection(ops.snapToRhythm, { keepTimeSelection: true });
         break;
       }
       case "Detect Key": {
@@ -1058,8 +1085,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
       channel: channelIndex(),
       bar: startBar,
     });
-    setRectangle(emptySelection(channelIndex(), startBar));
-    setTime(null);
+    clearSelection();
     audio().pause();
     setPlaying(false);
     history.cancelPreview();
@@ -1341,10 +1367,11 @@ export const App = (initial: EditorStartup): JSX.Element => {
     history.setContextHandlers(
       () => captureContext(),
       (context) => {
-        setCurrent(context.current);
-        setRectangle(context.rectangle);
-        setTime(context.time);
-        setInstrument(context.instrument);
+        batch(() => {
+          setCurrent(context.current);
+          setSelectedRange(context.time ? { kind: "time", time: context.time } : null);
+          setInstrument(context.instrument);
+        });
       },
     );
   });
@@ -1496,9 +1523,11 @@ export const App = (initial: EditorStartup): JSX.Element => {
       if (direction) {
         const [dt, db] = direction;
         if (keyAction.startsWith("extend")) {
+          const range = selectedRange();
+          const end = range?.kind === "grid" ? range.end : { channel: r.channelIndex, bar: r.bar };
           extend(
-            clamp(selectionEnd.channel + dt, 0, r.song.channels.length - 1),
-            clamp(selectionEnd.bar + db, 0, r.song.barCount - 1),
+            clamp(end.channel + dt, 0, r.song.channels.length - 1),
+            clamp(end.bar + db, 0, r.song.barCount - 1),
           );
         } else {
           select(
@@ -1509,8 +1538,8 @@ export const App = (initial: EditorStartup): JSX.Element => {
         return;
       }
       if (keyAction === "channelUp" || keyAction === "channelDown") {
-        edit((s) => {
-          ops.moveChannels(s, r.selection, keyAction === "channelUp" ? -1 : 1);
+        editSelection((s, target) => {
+          ops.moveChannels(s, target, keyAction === "channelUp" ? -1 : 1);
         });
         return;
       }
@@ -1528,8 +1557,8 @@ export const App = (initial: EditorStartup): JSX.Element => {
           cell,
         };
         if (value <= r.song.patternCount) {
-          edit((s) => {
-            ops.assignPattern(s, r.selection, value);
+          editSelection((s, target) => {
+            ops.assignPattern(s, target, value);
           });
         }
         return;
@@ -1563,15 +1592,18 @@ export const App = (initial: EditorStartup): JSX.Element => {
       } else if (keyAction === "pasteInstrument") {
         pasteInstrument();
       } else if (["transposeUp", "transposeDown", "octaveUp", "octaveDown"].includes(keyAction)) {
-        edit((s) => {
-          ops.transpose(
-            s,
-            r.selection,
-            keyAction.endsWith("Up") ? 1 : -1,
-            r.prefs.allowOutsideScale,
-            keyAction.startsWith("octave"),
-          );
-        });
+        editSelection(
+          (s, target) => {
+            ops.transpose(
+              s,
+              target,
+              keyAction.endsWith("Up") ? 1 : -1,
+              r.prefs.allowOutsideScale,
+              keyAction.startsWith("octave"),
+            );
+          },
+          { keepTimeSelection: true },
+        );
       } else if (keyAction === "muteSelected" || keyAction === "muteAll") {
         mute(keyAction === "muteAll" ? "all" : "selected");
       } else if (keyAction === "solo" || keyAction === "exclude") {
@@ -1594,8 +1626,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
       } else if (keyAction === "nextBar") {
         seek(r.position.bar + 1);
       } else if (keyAction === "clearSelection") {
-        setTime(null);
-        setRectangle(emptySelection(r.channelIndex, r.bar));
+        clearSelection();
       }
     };
     const up = (event: KeyboardEvent): void => {
@@ -1809,9 +1840,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
                 : null
             }
             selection={time()}
-            onSelection={(value) => {
-              setTime(value);
-            }}
+            onSelection={selectTime}
             onOctave={(value) => {
               if (value !== octave()) {
                 edit((draft) => {
@@ -2324,6 +2353,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
       </div>
       <ChannelEditor
         onChannelCount={(kind, count) => {
+          clearSelection();
           edit((s) => {
             ops.setChannelCount(s, kind, count);
           });
@@ -2331,7 +2361,7 @@ export const App = (initial: EditorStartup): JSX.Element => {
         song={song()}
         channel={channelIndex()}
         bar={bar()}
-        selection={selection()}
+        selection={gridSelection()}
         muted={muted()}
         playhead={playing() ? readPlayhead : null}
         disabled={disabled() || editorLocked()}
@@ -2340,10 +2370,10 @@ export const App = (initial: EditorStartup): JSX.Element => {
         onSelect={select}
         onRectangle={extend}
         onAssign={(delta) => {
-          edit((s) => {
+          editSelection((s, target) => {
             ops.assignPattern(
               s,
-              selection(),
+              target,
               ((channel().cells[bar()] ?? 0) + delta + s.patternCount + 1) % (s.patternCount + 1),
             );
           });

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { envelopeValue, SongRenderer } from "../../src/audio";
-import { createInstrument } from "../../src/instruments";
+import { createEnvelope, createInstrument } from "../../src/instruments";
 import { createSong, required } from "../../src/model";
 import { createNativeSynth } from "../../src/synth/adapter";
 
@@ -27,6 +27,63 @@ for (const playing of [false, true]) {
     runtime.process(left, right, playing, [], 60, 0);
     expect(left).not.toEqual(held);
   });
+}
+
+for (const chords of ["arpeggio", "custom interval"]) {
+  for (const transition of ["normal", "continue"]) {
+    test(`native ${chords} ${transition} keeps its attack through overlapping held keys`, () => {
+      const song = createSong();
+      const channel = required(song.channels[0]);
+      channel.cells.fill(0);
+      const instrument = createInstrument("chip wave");
+      instrument.chords = chords;
+      instrument.transition = transition;
+      instrument.release = 0;
+      instrument.envelopes = [{ ...createEnvelope(), target: "volume", type: "Decay" }];
+      channel.instruments = [instrument];
+      const ages: number[] = [];
+      const { runtime } = createNativeSynth(
+        song,
+        channel,
+        instrument,
+        8000,
+        (envelope, seconds, beats, size) => {
+          ages.push(seconds);
+          return envelopeValue(envelope, seconds, beats, size);
+        },
+      );
+      const render = (pitches: number[]): number => {
+        ages.length = 0;
+        runtime.process(
+          new Float64Array(256),
+          new Float64Array(256),
+          false,
+          pitches,
+          song.tempo,
+          0,
+        );
+        return required(ages[0]);
+      };
+      expect(render([48])).toBe(0);
+      let previous = required(ages.at(-1));
+      expect(render([48, 55])).toBeGreaterThanOrEqual(previous);
+      previous = required(ages.at(-1));
+      expect(render([48])).toBeGreaterThanOrEqual(previous);
+      previous = required(ages.at(-1));
+
+      // An overlapping handoff can arrive entirely between two render blocks.
+      runtime.setLivePitches([48, 55]);
+      runtime.setLivePitches([55]);
+      expect(render([55])).toBeGreaterThanOrEqual(previous);
+
+      // Replacing every held key, or releasing and pressing again, starts a note.
+      runtime.setLivePitches([60]);
+      expect(render([60])).toBe(0);
+      runtime.setLivePitches([]);
+      runtime.setLivePitches([60]);
+      expect(render([60])).toBe(0);
+    });
+  }
 }
 
 for (const type of ["chip wave", "FM (n-op)"]) {

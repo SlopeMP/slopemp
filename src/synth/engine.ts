@@ -1340,7 +1340,7 @@ export class Synth {
 
   public song: Song;
 
-  public liveInputStarted: boolean = false;
+  public liveInputChanged: boolean = false;
 
   public liveInputPitches: number[] = [];
 
@@ -2127,7 +2127,7 @@ export class Synth {
       const samplesLeftInBuffer: number = outputBufferLength - bufferIndex;
       const samplesLeftInTick: number = Math.ceil(this.tickSampleCountdown);
       const runLength: number = Math.min(samplesLeftInTick, samplesLeftInBuffer);
-      if (!this.isAtStartOfTick && this.liveInputStarted) {
+      if (!this.isAtStartOfTick && this.liveInputChanged) {
         this.determineLiveInputTones(song, samplesPerTick);
       }
       if (this.isAtStartOfTick) {
@@ -2260,8 +2260,9 @@ export class Synth {
   }
 
   public setLiveInputPitches(pitches: number[]): void {
+    const previousPitches = this.liveInputPitches;
     this.liveInputPitches = pitches;
-    this.liveInputStarted = true;
+    this.liveInputChanged = true;
     const { instrumentState, song } = this;
     const tones = instrumentState.liveInputTones;
     // Process releases on the event itself, so an off/on pair between render
@@ -2269,7 +2270,7 @@ export class Synth {
     for (let index = tones.length - 1; index >= 0; index--) {
       const tone = required(tones[index]);
       const held = song.instrument.getChord().singleTone
-        ? pitches.length > 0
+        ? pitches.some((pitch) => previousPitches.includes(pitch))
         : pitches.includes(required(tone.pitches[0]));
       if (held) {
         continue;
@@ -2317,12 +2318,7 @@ export class Synth {
     let toneCount: number = 0;
     if (pitches.length > 0) {
       if (instrument.getChord().singleTone) {
-        const tone = this.reuseTone(
-          toneList,
-          toneCount,
-          instrumentState,
-          !instrument.getTransition().isSeamless && this.liveInputStarted,
-        );
+        const tone = this.reuseTone(toneList, toneCount, instrumentState, false);
         toneCount++;
         for (let i: number = 0; i < pitches.length; i++) {
           tone.pitches[i] = required(pitches[i]);
@@ -2332,7 +2328,7 @@ export class Synth {
         tone.nextNote = null;
         tone.prevNote = null;
         tone.note = null;
-        tone.atNoteStart = this.liveInputStarted;
+        tone.atNoteStart = tone.freshlyAllocated;
         tone.forceContinueAtStart = false;
         tone.forceContinueAtEnd = false;
         this.computeTone(song, samplesPerTick, tone, false, false);
@@ -2367,7 +2363,7 @@ export class Synth {
     }
     this.clearTempMatchedPitchTones(toneCount, instrumentState);
 
-    this.liveInputStarted = false;
+    this.liveInputChanged = false;
   }
 
   private matchTonesByPitch(toneList: Tone[], notePitches: number[]): void {

@@ -144,6 +144,90 @@ test("zero cells allocate notes, clearing assignment retains stored pattern", as
   expect(requireValue(song.channels[0]).cells[4]).toBe(0);
   expect(requireValue(requireValue(song.channels[0]).patterns[number]).notes).toHaveLength(1);
 });
+test("track grid and piano roll selections replace each other", async ({ page }) => {
+  const current = page.getByTestId("cell-0-0");
+  const last = page.getByTestId("cell-0-3");
+  const rectangle = page.locator(".channel-selection");
+  const time = page.locator(".time-selection");
+  const selectTime = async (): Promise<void> => {
+    await page
+      .getByTestId("note-grid")
+      .click({ modifiers: ["Shift"], position: { x: 80, y: 100 } });
+  };
+
+  await last.click({ modifiers: ["Shift"] });
+  await expect(rectangle).toBeVisible();
+  await selectTime();
+  await expect(time).toBeVisible();
+  await expect(rectangle).toHaveCount(0);
+  await expect(current).toHaveClass(/current/u);
+  await expect(current).toHaveAttribute("aria-pressed", "false");
+
+  await last.click({ modifiers: ["Shift"] });
+  await expect(rectangle).toBeVisible();
+  await expect(time).toHaveCount(0);
+  await selectTime();
+  await expect(time).toBeVisible();
+  await page.locator("main").focus();
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(rectangle).toBeVisible();
+  await expect(time).toHaveCount(0);
+  await expect(page.getByTestId("cell-0-1")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("cell-0-2")).toHaveAttribute("aria-pressed", "false");
+});
+
+test("track grid edits clear the selected range and keep its active cell", async ({ page }) => {
+  const song = createSong();
+  requireValue(song.channels[0]).cells.splice(1, 2, 1, 2);
+  await page.goto(`./#${encodeSong(song)}`);
+  const source = page.getByTestId("cell-0-1");
+  const sourceEnd = page.getByTestId("cell-0-2");
+  const destination = page.getByTestId("cell-0-4");
+  const destinationEnd = page.getByTestId("cell-0-6");
+  const selectedCells = page.locator('.channel-cell[aria-pressed="true"]');
+
+  await source.click();
+  await sourceEnd.click({ modifiers: ["Shift"] });
+  await expect(selectedCells).toHaveCount(2);
+  await command(page, "Copy");
+  await expect(selectedCells).toHaveCount(0);
+  await expect(source).toHaveClass(/current/u);
+  await expect(sourceEnd).toHaveText("2");
+
+  await sourceEnd.click({ modifiers: ["Shift"] });
+  await expect(selectedCells).toHaveCount(2);
+  await command(page, "Cut");
+  await expect(selectedCells).toHaveCount(0);
+  await expect(source).toHaveClass(/current/u);
+  await expect(source).toHaveText("0");
+  await expect(sourceEnd).toHaveText("0");
+
+  await destination.click();
+  await destinationEnd.click({ modifiers: ["Shift"] });
+  await expect(selectedCells).toHaveCount(3);
+  await command(page, "Paste");
+  await expect(selectedCells).toHaveCount(0);
+  await expect(destination).toHaveClass(/current/u);
+  await expect(destinationEnd).toHaveText("1");
+
+  await destinationEnd.click({ modifiers: ["Shift"] });
+  await expect(selectedCells).toHaveCount(3);
+  await page.keyboard.press("Delete");
+  await expect(selectedCells).toHaveCount(0);
+  await expect(destination).toHaveClass(/current/u);
+  await expect(page.getByRole("spinbutton", { name: "Song length", exact: true })).toHaveValue(
+    "13",
+  );
+
+  await destinationEnd.click({ modifiers: ["Shift"] });
+  await expect(selectedCells).toHaveCount(3);
+  await command(page, "Undo");
+  await expect(page.getByRole("spinbutton", { name: "Song length", exact: true })).toHaveValue(
+    "16",
+  );
+  await expect(selectedCells).toHaveCount(0);
+});
+
 test("channel rectangle and pattern clipboard keep bar count fixed", async ({ page }) => {
   await gridClick(page);
   await command(page, "Copy");
@@ -226,11 +310,18 @@ test("a delayed clipboard read pastes into the selected destination at the time 
   }, serializePatternClipboard(clipboard));
 
   const originalTarget = page.getByTestId("cell-1-2");
-  const nextTarget = page.getByTestId("cell-1-3");
+  const originalEnd = page.getByTestId("cell-1-3");
+  const nextTarget = page.getByTestId("cell-1-4");
+  const nextEnd = page.getByTestId("cell-1-5");
+  const rectangle = page.locator(".channel-selection");
   try {
     await originalTarget.click();
+    await originalEnd.click({ modifiers: ["Shift"] });
+    await expect(rectangle).toBeVisible();
     await command(page, "Paste");
+    await expect(rectangle).toHaveCount(0);
     await nextTarget.click();
+    await nextEnd.click({ modifiers: ["Shift"] });
     await expect(originalTarget).toHaveText("0");
   } finally {
     await page.evaluate(() => {
@@ -238,7 +329,9 @@ test("a delayed clipboard read pastes into the selected destination at the time 
     });
   }
   await expect(originalTarget).toHaveText("1");
+  await expect(originalEnd).toHaveText("1");
   await expect(nextTarget).toHaveText("0");
+  await expect(nextEnd).toHaveAttribute("aria-pressed", "true");
 });
 test("track editor paste keeps pattern numbers within the same channel", async ({ page }) => {
   const song = createSong();

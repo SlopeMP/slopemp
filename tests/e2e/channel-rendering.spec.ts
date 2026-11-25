@@ -136,6 +136,7 @@ test("100 channels select rectangular ranges, edit and undo without losing cells
   await expect(page.locator('.channel-cell[aria-pressed="true"]')).toHaveCount(1600);
   await page.locator("main").focus();
   await page.keyboard.press("3");
+  await expect(page.locator('.channel-cell[aria-pressed="true"]')).toHaveCount(0);
   await expect
     .poll(async () =>
       (await readSong(page)).channels.every((channel) => channel.cells.every((cell) => cell === 3)),

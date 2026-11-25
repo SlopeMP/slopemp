@@ -7,7 +7,7 @@ type OutputOptions = { processorOptions: { output: SharedArrayBuffer } };
 type Output = { process: (inputs: Float32Array[][], outputs: Float32Array[][]) => boolean };
 
 test("audio worklet consumes shared stereo blocks and skips stale playback", async () => {
-  const output = new AudioOutputBuffer();
+  const output = AudioOutputBuffer.create(44_100);
   const registered: Output[] = [];
   const globals = {
     currentTime: 10,
@@ -71,6 +71,14 @@ test("audio worklet consumes shared stereo blocks and skips stale playback", asy
     expect(output.readIndex).toBe(5);
     expect([output.consumedTime(2), output.consumedTime(3)]).toEqual(oldTimes);
     expect(output.consumedTime(4)).toBe(13 + 224 / audioBlockFrames);
+
+    // A system callback may run several 128-frame quanta before the worker can refill.
+    for (let index = 0; index < output.queuedBlocks; index++) {
+      write(1);
+    }
+    for (let quantum = 0; quantum < 8; quantum++) {
+      expectStereo(consume(128, 14 + quantum / 2), samples(128, 1));
+    }
   } finally {
     for (const [key, descriptor] of previous) {
       if (descriptor) {

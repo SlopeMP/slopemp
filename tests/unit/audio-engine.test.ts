@@ -8,7 +8,7 @@ import {
   removeAudioResource,
 } from "../../src/audio";
 import type { AudioCommand, AudioReply } from "../../src/audio";
-import { audioBlockFrames, queuedAudioBlocks } from "../../src/audio-output-buffer";
+import { audioBlockFrames, AudioOutputBuffer } from "../../src/audio-output-buffer";
 import { createInstrument } from "../../src/instruments";
 import { createSong, required } from "../../src/model";
 
@@ -39,7 +39,8 @@ test("the audio bridge retains only song resources, forwards replacements, and r
     public initialize(): void {
       const command = required(this.commands.find((item) => item.type === "init"));
       const position = command.bar + command.beat / command.song.beatsPerBar;
-      for (let id = 0; id < queuedAudioBlocks; id++) {
+      const output = new AudioOutputBuffer(command.output);
+      for (let id = 0; id < output.queuedBlocks; id++) {
         this.reply({
           type: "block",
           generation: command.generation,
@@ -70,6 +71,7 @@ test("the audio bridge retains only song resources, forwards replacements, and r
   }
   class FakeAudioContext {
     public readonly sampleRate = 8000;
+    public readonly baseLatency = 0.04;
     public currentTime = 10;
     public state = "running";
     public readonly destination = {};
@@ -172,6 +174,7 @@ test("the audio bridge retains only song resources, forwards replacements, and r
     expect(context.modules).toEqual(["https://example.com/slopemp/audio-worklet.js"]);
     expect(node.connected).toBe(true);
     expect(node.output).toBeInstanceOf(SharedArrayBuffer);
+    expect(new AudioOutputBuffer(node.output).queuedBlocks).toBe(3);
     expect(init.output).toBe(node.output);
     const initIndex = worker.commands.findIndex((command) => command.type === "init");
     const snapshots = worker.commands

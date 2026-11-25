@@ -3930,10 +3930,10 @@ export class AudioEngine {
         "Audio playback requires a cross-origin isolated page and a current browser.",
       );
     }
-    const { buffer: output } = new AudioOutputBuffer();
     const context = new AudioContext({ latencyHint: "interactive" });
     this.context = context;
     try {
+      const { buffer: output } = AudioOutputBuffer.create(context.sampleRate, context.baseLatency);
       await context.audioWorklet.addModule(new URL("./audio-worklet.js", document.baseURI).href);
       const node = new AudioWorkletNode(context, "slope-output", {
         numberOfInputs: 0,

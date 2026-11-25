@@ -1,11 +1,6 @@
 import { applyAudioResourceUpdate, isDedicatedWorker, SongRenderer } from "./audio";
 import type { AudioCommand, AudioReply, AudioResourceUpdate } from "./audio";
-import {
-  audioBlockFrames,
-  AudioOutputBuffer,
-  nextAudioBlock,
-  queuedAudioBlocks,
-} from "./audio-output-buffer";
+import { audioBlockFrames, AudioOutputBuffer, nextAudioBlock } from "./audio-output-buffer";
 import { AudioThreadPool } from "./audio-thread-pool";
 import { normalizeAudioThreads } from "./preferences";
 
@@ -214,7 +209,7 @@ export class AudioWorkerSession {
     }
     this.collectConsumed(output);
     // Reclaim a slot only after recording its playback time.
-    while (this.queued < queuedAudioBlocks && output.hasSpace(this.observedRead)) {
+    while (this.queued < output.queuedBlocks && output.hasSpace(this.observedRead)) {
       await this.writeAudio(output, renderer, pool);
       this.queued++;
     }

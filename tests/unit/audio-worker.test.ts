@@ -2,16 +2,15 @@ import { expect, test } from "bun:test";
 
 import { SongRenderer } from "../../src/audio";
 import type { AudioReply } from "../../src/audio";
-import {
-  audioBlockFrames,
-  AudioOutputBuffer,
-  queuedAudioBlocks,
-} from "../../src/audio-output-buffer";
+import { audioBlockFrames, AudioOutputBuffer } from "../../src/audio-output-buffer";
 import { AudioWorkerSession } from "../../src/audio-worker";
 import { createInstrument } from "../../src/instruments";
 import { createNote, createSong, required } from "../../src/model";
 
-const fixture = async (): Promise<{
+const fixture = async (
+  sampleRate = 8000,
+  baseLatency = 0,
+): Promise<{
   song: ReturnType<typeof createSong>;
   output: AudioOutputBuffer;
   replies: AudioReply[];
@@ -24,7 +23,7 @@ const fixture = async (): Promise<{
   channel.instruments = [createInstrument("Custom chip wave")];
   channel.cells.fill(1);
   required(channel.patterns[1]).notes = [createNote(0, song.beatsPerBar, 48)];
-  const output = new AudioOutputBuffer();
+  const output = AudioOutputBuffer.create(sampleRate, baseLatency);
   const replies: AudioReply[] = [];
   const waiting = new Map<number, () => void>();
   const session = new AudioWorkerSession((reply) => {
@@ -37,7 +36,7 @@ const fixture = async (): Promise<{
   await session.handle({
     type: "init",
     song,
-    sampleRate: 8000,
+    sampleRate,
     threadCount: 1,
     bar: 0,
     beat: 0,
@@ -64,6 +63,7 @@ const fixture = async (): Promise<{
 
 test("the synthesis worker replenishes shared audio independently and retains audio through edits", async () => {
   const { song, output, replies, session, whenWritten } = await fixture();
+  const queuedAudioBlocks = output.queuedBlocks;
   expect(output.writeIndex).toBe(queuedAudioBlocks);
   expect(replies.at(-1)).toEqual({ type: "ready" });
   const reference = new SongRenderer(song, 8000);
@@ -99,7 +99,8 @@ test("the synthesis worker replenishes shared audio independently and retains au
 });
 
 test("transport resets skip stale blocks and wait for space without blocking commands", async () => {
-  const { song, output, replies, session, whenWritten } = await fixture();
+  const { song, output, replies, session, whenWritten } = await fixture(48_000, 0.02);
+  const queuedAudioBlocks = output.queuedBlocks;
   await session.handle({ type: "seek", bar: 2, beat: 0.5, generation: 1 });
   expect(output.generation).toBe(1);
   expect(output.writeIndex).toBe(2 * queuedAudioBlocks);
@@ -125,4 +126,27 @@ test("transport resets skip stale blocks and wait for space without blocking com
     expect(left.every((value) => value === 0)).toBe(true);
     expect(right.every((value) => value === 0)).toBe(true);
   }
+});
+
+test("the synthesis worker refills a device-sized queue after batched audio consumption", async () => {
+  const sampleRate = 96_000;
+  const { song, output, session, whenWritten } = await fixture(sampleRate, 0.02);
+  const reference = new SongRenderer(song, sampleRate);
+  const queued = output.queuedBlocks;
+  expect((queued * audioBlockFrames) / sampleRate).toBeGreaterThanOrEqual(0.04);
+  for (let pass = 0; pass < 3; pass++) {
+    const start = output.readIndex;
+    const written = whenWritten(output.writeIndex + queued - 1);
+    for (let offset = 0; offset < queued; offset++) {
+      const id = start + offset;
+      const left = new Float32Array(audioBlockFrames);
+      const right = new Float32Array(audioBlockFrames);
+      reference.process(left, right);
+      expect(output.block(id)).toEqual({ left, right });
+      output.release(id, 10 + ((id + 1) * audioBlockFrames) / sampleRate);
+    }
+    await written;
+    expect(output.writeIndex - output.readIndex).toBe(queued);
+  }
+  await session.handle({ type: "pause", bar: 0, generation: 1 });
 });

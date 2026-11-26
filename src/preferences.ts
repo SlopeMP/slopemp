@@ -9,7 +9,8 @@ import { scales } from "./model";
 export const MAX_AUDIO_THREADS = 16;
 export const defaultAudioThreads = (
   cores = typeof navigator === "undefined" ? 2 : navigator.hardwareConcurrency,
-): number => (Number.isFinite(cores) ? Math.max(1, Math.min(4, Math.floor(cores) - 1)) : 1);
+): number =>
+  Number.isFinite(cores) ? Math.max(1, Math.min(MAX_AUDIO_THREADS, Math.floor(cores) - 1)) : 1;
 export const normalizeAudioThreads = (value: number): number =>
   Number.isFinite(value)
     ? Math.max(1, Math.min(MAX_AUDIO_THREADS, Math.round(value)))

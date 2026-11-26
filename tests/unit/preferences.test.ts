@@ -87,8 +87,9 @@ describe("local preferences", () => {
       [1, 1],
       [2, 1],
       [4, 3],
-      [8, 4],
-      [64, 4],
+      [8, 7],
+      [16, 15],
+      [64, MAX_AUDIO_THREADS],
     ];
     for (const [cores, expected] of coreCases) {
       expect(defaultAudioThreads(cores)).toBe(expected);

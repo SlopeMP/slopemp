@@ -14,10 +14,10 @@ const TAU = Math.PI * 2;
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, Number.isNaN(value) ? 0 : value));
 
-// Resolve native routes and sample metadata once per voice and preset.
-type SFVoiceZone = {
+// These values depend on the font, preset and original key, never on voice age.
+type SFZoneConfig = Readonly<{
   header: SFSample;
-  position: number;
+  start: number;
   end: number;
   loopStart: number;
   loopEnd: number;
@@ -27,13 +27,9 @@ type SFVoiceZone = {
   root: number;
   scale: number;
   tuning: number;
-  rateCents: number;
-  playbackRate: number;
   gain: number;
   modEnvelope: PreparedSFEnvelope;
   volEnvelope: PreparedSFEnvelope;
-  modEnvelopeState: SFEnvelopeState;
-  volEnvelopeState: SFEnvelopeState;
   modPitch: number;
   vibPitch: number;
   envPitch: number;
@@ -45,17 +41,24 @@ type SFVoiceZone = {
   modFilter: number;
   envFilter: number;
   q: number;
-  filterCents: number;
-  b0: number;
-  a1: number;
-  a2: number;
-  history: Float64Array;
   mono: boolean;
   modVolume: number;
   panL: number;
   panR: number;
   reverb: number;
   chorus: number;
+}>;
+type SFVoiceZone = SFZoneConfig & {
+  position: number;
+  rateCents: number;
+  playbackRate: number;
+  filterCents: number;
+  b0: number;
+  a1: number;
+  a2: number;
+  history: Float64Array;
+  modEnvelopeState: SFEnvelopeState;
+  volEnvelopeState: SFEnvelopeState;
 };
 export type SFVoiceState = {
   block: number;
@@ -68,13 +71,13 @@ export type SFVoiceState = {
   zones: SFVoiceZone[];
   finished: boolean;
 };
-export const prepareSoundFontVoice = (
+const prepareZones = (
   font: SoundFont,
   preset: SFPreset,
   originalKey: number,
-): SFVoiceState => {
+): readonly SFZoneConfig[] => {
   const state = defaultSFControllers(originalKey);
-  const zones: SFVoiceZone[] = [];
+  const zones: SFZoneConfig[] = [];
   for (const zone of preset.zones) {
     const keyRange = zone.generators.get(43) ?? 32_512;
     const velocityRange = zone.generators.get(44) ?? 32_512;
@@ -110,7 +113,7 @@ export const prepareSoundFontVoice = (
     const linkedOffset = stereoPair ? linked.start - header.start : 0;
     zones.push({
       header,
-      position: header.start + (g.get(0) ?? 0) + (g.get(4) ?? 0) * 32_768,
+      start: header.start + (g.get(0) ?? 0) + (g.get(4) ?? 0) * 32_768,
       end: header.end + (g.get(1) ?? 0) + (g.get(12) ?? 0) * 32_768,
       loopStart: header.loopStart + (g.get(2) ?? 0) + (g.get(45) ?? 0) * 32_768,
       loopEnd: header.loopEnd + (g.get(3) ?? 0) + (g.get(50) ?? 0) * 32_768,
@@ -120,13 +123,9 @@ export const prepareSoundFontVoice = (
       root: rootOverride >= 0 ? rootOverride : header.root,
       scale: g.get(56) ?? 100,
       tuning: (g.get(51) ?? 0) * 100 + (g.get(52) ?? 0) + header.correction,
-      rateCents: Number.NaN,
-      playbackRate: 0,
       gain: 0.5 * 10 ** (-attenuation / 200),
       modEnvelope: prepareSFEnvelope(g, key, false),
       volEnvelope: prepareSFEnvelope(g, key, true),
-      modEnvelopeState: createSFEnvelopeState(),
-      volEnvelopeState: createSFEnvelopeState(),
       modPitch: g.get(5) ?? 0,
       vibPitch: g.get(6) ?? 0,
       envPitch: g.get(7) ?? 0,
@@ -138,11 +137,6 @@ export const prepareSoundFontVoice = (
       modFilter: g.get(10) ?? 0,
       envFilter: g.get(11) ?? 0,
       q: 10 ** (clamp(g.get(9) ?? 0, 0, 960) / 200),
-      filterCents: Number.NaN,
-      b0: 0,
-      a1: 0,
-      a2: 0,
-      history: new Float64Array(8),
       mono: linkedOffset === 0,
       modVolume: (g.get(13) ?? 0) / 10,
       panL: Math.cos((Math.max(0, pan) * Math.PI) / 2),
@@ -151,15 +145,65 @@ export const prepareSoundFontVoice = (
       chorus: clamp((g.get(15) ?? 0) / 1000, 0, 1),
     });
   }
-  return {
-    block: 0,
-    font,
-    bank: preset.bank,
-    program: preset.program,
-    originalKey,
-    frequency: Number.NaN,
-    midi: 0,
-    zones,
-    finished: false,
-  };
+  return zones;
 };
+
+// Weak ownership releases prepared metadata when a font is removed or replaced.
+const preparedZones = new WeakMap<
+  SoundFont,
+  WeakMap<SFPreset, Map<number, readonly SFZoneConfig[]>>
+>();
+const cachedZones = (
+  font: SoundFont,
+  preset: SFPreset,
+  originalKey: number,
+): readonly SFZoneConfig[] => {
+  // Bound metadata to the MIDI key space while retaining out-of-range playback.
+  if (!Number.isInteger(originalKey) || originalKey < 0 || originalKey > 127) {
+    return prepareZones(font, preset, originalKey);
+  }
+  let presets = preparedZones.get(font);
+  if (!presets) {
+    presets = new WeakMap();
+    preparedZones.set(font, presets);
+  }
+  let keys = presets.get(preset);
+  if (!keys) {
+    keys = new Map();
+    presets.set(preset, keys);
+  }
+  let zones = keys.get(originalKey);
+  if (!zones) {
+    zones = prepareZones(font, preset, originalKey);
+    keys.set(originalKey, zones);
+  }
+  return zones;
+};
+
+export const prepareSoundFontVoice = (
+  font: SoundFont,
+  preset: SFPreset,
+  originalKey: number,
+): SFVoiceState => ({
+  block: 0,
+  font,
+  bank: preset.bank,
+  program: preset.program,
+  originalKey,
+  frequency: Number.NaN,
+  midi: 0,
+  zones: cachedZones(font, preset, originalKey).map((zone) => ({
+    ...zone,
+    position: zone.start,
+    rateCents: Number.NaN,
+    playbackRate: 0,
+    filterCents: Number.NaN,
+    b0: 0,
+    a1: 0,
+    a2: 0,
+    history: new Float64Array(8),
+    modEnvelopeState: createSFEnvelopeState(),
+    volEnvelopeState: createSFEnvelopeState(),
+  })),
+  finished: false,
+});

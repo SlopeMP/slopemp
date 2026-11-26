@@ -11,6 +11,7 @@
   "scripts": {
     "benchmark:audio": "bun scripts/benchmark-audio.ts",
     "benchmark:song": "bun scripts/benchmark-song.ts",
+    "benchmark:soundfont": "bun scripts/benchmark-soundfont.ts",
     "benchmark:synthesis": "bun scripts/benchmark-synthesis.ts",
     "build": "bun scripts/build.ts",
     "cf:login": "wrangler login",

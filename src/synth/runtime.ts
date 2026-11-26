@@ -33,6 +33,7 @@ export type SynthRuntime = {
   setLoop: (start: number, end: number) => void;
   update: (data: SongSettings, settings: RuntimeSettings) => void;
   seek: (bar: number) => void;
+  jumpToBar: (bar: number) => void;
 };
 export type InstrumentSettings = {
   type: string;
@@ -290,6 +291,11 @@ export const createSynthRuntime = (data: SongSettings, settings: RuntimeSettings
     setLoop: (start, end): void => {
       song.loopStart = start;
       song.loopLength = end - start;
+    },
+    // An automated bar jump changes the score position while existing tones
+    // remain available for releases and the next note's transition.
+    jumpToBar: (bar): void => {
+      synth.seek(bar);
     },
     sample: (playing, pitches, tempo, detune): [number, number] => {
       applyControls(pitches, tempo, detune);

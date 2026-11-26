@@ -2328,6 +2328,7 @@ const nativeControlRuns = ({ frames }: RenderPlan): number[] => {
     const frame = required(frames[index]);
     if (
       previous?.playing !== frame.playing ||
+      previous.barVisit !== frame.barVisit ||
       previous.globals.tempo !== frame.globals.tempo ||
       previous.globals.detune !== frame.globals.detune
     ) {
@@ -2362,7 +2363,12 @@ export type SongRendererOptions = {
   channelIds?: ReadonlySet<string>;
   master?: boolean;
 };
-type NativeCache = { signature: string; native: NativeSynth };
+type NativeCache = {
+  signature: string;
+  native: NativeSynth;
+  barVisit: number;
+  nextBeat: number;
+};
 type NativeBuffers = {
   left: Float64Array;
   right: Float64Array;
@@ -2607,15 +2613,21 @@ export class SongRenderer {
             cached = this.nativeRenderer(channel, instrument);
           }
           const block = this.nativeBlock;
-          instrumentOutput =
-            block?.instrumentId === instrument.id
-              ? [block.left[this.nativeBlockFrame] ?? 0, block.right[this.nativeBlockFrame] ?? 0]
-              : cached.native.runtime.sample(
-                  this.playing,
-                  livePitches,
-                  globals.tempo,
-                  globals.detune,
-                );
+          if (block?.instrumentId === instrument.id) {
+            instrumentOutput = [
+              block.left[this.nativeBlockFrame] ?? 0,
+              block.right[this.nativeBlockFrame] ?? 0,
+            ];
+          } else {
+            this.synchronizeNativeBar(cached, this.barVisit, this.bar, this.sequenceIndex);
+            instrumentOutput = cached.native.runtime.sample(
+              this.playing,
+              livePitches,
+              globals.tempo,
+              globals.detune,
+            );
+            cached.nextBeat = this.beat + globals.tempo / 60 / this.sampleRate;
+          }
         } else {
           const activeBefore = this.activeVoiceCount;
           if (note === null) {
@@ -3119,6 +3131,7 @@ export class SongRenderer {
     bar = this.bar,
     beat = this.beat,
     sequenceIndex = this.sequenceIndex,
+    barVisit = this.barVisit,
   ): NativeCache {
     let cached = this.upstreamRenderers.get(instrument.id);
     if (!cached) {
@@ -3131,10 +3144,30 @@ export class SongRenderer {
         this.sequence ?? undefined,
       );
       native.runtime.seek((this.sequence ? sequenceIndex : bar) + beat / this.song.beatsPerBar);
-      cached = { signature: this.nativeSignature(channel, instrument), native };
+      cached = {
+        signature: this.nativeSignature(channel, instrument),
+        native,
+        barVisit,
+        nextBeat: beat,
+      };
       this.upstreamRenderers.set(instrument.id, cached);
     }
     return cached;
+  }
+  private synchronizeNativeBar(
+    cached: NativeCache,
+    barVisit: number,
+    bar: number,
+    sequenceIndex: number,
+  ): void {
+    if (cached.barVisit !== barVisit) {
+      // The native score advances full bars itself. Only an early transport
+      // transition needs a jump, including a loop back to the same source bar.
+      if (cached.nextBeat < this.song.beatsPerBar - 1e-9) {
+        cached.native.runtime.jumpToBar(this.sequence ? sequenceIndex : bar);
+      }
+      cached.barVisit = barVisit;
+    }
   }
   private prepareNativeBlock(
     plan: RenderPlan,
@@ -3182,6 +3215,7 @@ export class SongRenderer {
       first.bar,
       first.beat,
       first.sequenceIndex,
+      first.barVisit,
     );
     let buffers = reuseBuffers ? this.nativeBuffers : null;
     if (!buffers || buffers.left.length < plan.frames.length) {
@@ -3203,6 +3237,7 @@ export class SongRenderer {
       const from = run === firstRun ? start : required(runs[run]);
       const to = required(runs[run + 1]);
       const frame = required(plan.frames[from]);
+      this.synchronizeNativeBar(cached, frame.barVisit, frame.bar, frame.sequenceIndex);
       sounded =
         cached.native.runtime.process(
           left.subarray(from, to),
@@ -3212,6 +3247,8 @@ export class SongRenderer {
           frame.globals.tempo,
           frame.globals.detune,
         ) || sounded;
+      const last = required(plan.frames[to - 1]);
+      cached.nextBeat = last.beat + last.globals.tempo / 60 / this.sampleRate;
     }
     return { channel, instrumentId: instrument.id, left, right, sounded };
   }

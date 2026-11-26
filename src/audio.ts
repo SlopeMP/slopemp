@@ -1664,7 +1664,7 @@ type Voice = {
   sfChorusL: number;
   sfChorusR: number;
   fmState: FMVoiceState;
-  fmSample: Stereo;
+  sourceOutput: Stereo;
   parameterInstrument: Instrument | null;
   parameterEnvelopes: Map<string, Envelope[]>;
   age: number;
@@ -1739,7 +1739,7 @@ const makeVoice = (id: string, live: boolean): Voice => {
     sfChorusL: 0,
     sfChorusR: 0,
     fmState: createFMVoice(),
-    fmSample: [0, 0],
+    sourceOutput: [0, 0],
     parameterInstrument: null,
     parameterEnvelopes: new Map(),
     age: 0,
@@ -1958,13 +1958,16 @@ const soundFontSample = (
   block: number,
 ): Stereo => {
   // Resource and preset edits take effect between synchronous blocks.
+  const output = voice.sourceOutput;
+  output[0] = 0;
+  output[1] = 0;
   const cached = voice.soundFont;
   const prepared =
     block !== 0 && cached?.block === block
       ? cached
       : resolveSoundFontVoice(instrument, voice, frequency, block);
   if (!prepared || prepared.finished) {
-    return [0, 0];
+    return output;
   }
   if (prepared.frequency !== frequency) {
     prepared.frequency = frequency;
@@ -2093,7 +2096,9 @@ const soundFontSample = (
     }
   }
   prepared.finished = !remaining;
-  return [left, right];
+  output[0] = left;
+  output[1] = right;
+  return output;
 };
 const sourceSample = (
   instrument: Instrument,
@@ -2119,7 +2124,7 @@ const sourceSample = (
       required(voice.evaluateParameter),
       voice.parameterEnvelopes,
       renderBlock,
-      voice.fmSample,
+      voice.sourceOutput,
     );
   }
   const { phase } = voice;

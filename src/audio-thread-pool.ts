@@ -319,7 +319,7 @@ export class AudioThreadPool {
 
   private send(slot: TrackWorker, command: AudioTrackCommand): void {
     try {
-      slot.worker.postMessage(command, []);
+      slot.worker.postMessage(this.workerCommand(command), []);
       if (command.type === "init") {
         for (const update of command.resources) {
           this.markResourceSent(slot, update.id);
@@ -335,6 +335,34 @@ export class AudioThreadPool {
     } catch (error) {
       this.fail(slot, error instanceof Error ? error : new Error(String(error)));
     }
+  }
+
+  private workerCommand(command: AudioTrackCommand): AudioTrackCommand {
+    if (command.type === "init") {
+      return {
+        ...command,
+        config: { ...command.config, song: this.workerSong(command.config.song, command.trackIds) },
+      };
+    }
+    if (command.type === "update" && command.command.type === "song") {
+      return {
+        ...command,
+        command: { type: "song", song: this.workerSong(command.command.song, command.trackIds) },
+      };
+    }
+    return command;
+  }
+
+  private workerSong(song: Song, trackIds: readonly string[]): Song {
+    const owned = new Set(trackIds);
+    // Keep all automation so song controls and cross-track targets retain their
+    // original order. Other tracks never render here and need not be cloned.
+    return {
+      ...song,
+      channels: song.channels.filter(
+        (channel) => channel.kind === "automation" || owned.has(channel.id),
+      ),
+    };
   }
 
   private resourceUpdates(slot: TrackWorker): AudioResourceUpdate[] {

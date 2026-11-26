@@ -135,6 +135,78 @@ const deliveredResources = (commands: readonly AudioTrackCommand[]): AudioResour
       : [];
   });
 
+test("worker song messages include owned tracks and all automation through ownership edits", async () => {
+  const probe = probeWorkers();
+  const config = fixture(7, 4);
+  config.song.resources = [{ id: "font-metadata", url: "https://example.com/font.sf2" }];
+  const global = createChannel("automation", config.song.barCount, config.song.patternCount);
+  global.target = { kind: "song" };
+  const target = createChannel("automation", config.song.barCount, config.song.patternCount);
+  target.target = { kind: "channel", channelId: required(config.song.channels[0]).id };
+  const instrument = createChannel("automation", config.song.barCount, config.song.patternCount);
+  instrument.target = {
+    kind: "instrument",
+    instrumentId: required(required(config.song.channels[6]).instruments[0]).id,
+  };
+  config.song.channels.splice(2, 0, global, target, instrument);
+  const pool = new AudioThreadPool(config);
+  const verify = (song: TrackPoolConfig["song"]): void => {
+    for (const worker of probe.workers.filter((entry) => !entry.terminated)) {
+      const message = worker.commands.findLast(
+        (command) =>
+          command.type === "init" || (command.type === "update" && command.command.type === "song"),
+      );
+      if (!message || message.type === "render") {
+        throw new Error("Missing worker song payload.");
+      }
+      const received = ((): TrackPoolConfig["song"] => {
+        if (message.type === "init") {
+          return message.config.song;
+        }
+        if (message.command.type === "song") {
+          return message.command.song;
+        }
+        throw new Error("Missing worker song update.");
+      })();
+      expect(received).toEqual({
+        ...song,
+        channels: song.channels.filter(
+          (channel) => channel.kind === "automation" || message.trackIds.includes(channel.id),
+        ),
+      });
+      expect(received.channels.filter((channel) => channel.kind === "track")).toHaveLength(
+        message.trackIds.length,
+      );
+      expect(received.resources).toEqual(song.resources);
+    }
+  };
+  try {
+    verify(config.song);
+    expect((await pool.render(256)).map((stem) => stem.channelId)).toEqual(
+      config.song.channels
+        .filter((channel) => channel.kind === "track")
+        .map((channel) => channel.id),
+    );
+    const changed = structuredClone(config.song);
+    changed.channels.reverse();
+    changed.channels.splice(
+      changed.channels.findIndex((channel) => channel.kind === "track"),
+      1,
+    );
+    changed.channels.push(createChannel("track", changed.barCount, changed.patternCount));
+    pool.update({ type: "song", song: changed });
+    verify(changed);
+    expect((await pool.render(256)).map((stem) => stem.channelId)).toEqual(
+      changed.channels.filter((channel) => channel.kind === "track").map((channel) => channel.id),
+    );
+    // Message preparation leaves the coordinator's complete song untouched.
+    expect(config.song.channels).toHaveLength(10);
+  } finally {
+    pool.close();
+    probe.restore();
+  }
+});
+
 test("adding a blank track leaves loaded SoundFonts out of worker startup and preserves playback", async () => {
   const probe = probeWorkers();
   const config = fixture(1, 3);

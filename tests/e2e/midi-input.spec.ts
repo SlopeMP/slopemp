@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 import type { AudioCommand } from "../../src/audio";
-import { createInstrument } from "../../src/instruments";
+import { createEffect, createEnvelope, createInstrument } from "../../src/instruments";
 import { createSong, required } from "../../src/model";
 import type { Song } from "../../src/model";
 import { encodeSong } from "../../src/storage";
@@ -169,4 +169,80 @@ test("MIDI layers and duplicate ports sustain one note until its last release or
       await expectSilent(page);
     }
   }
+});
+
+const audioTime = async (page: Page): Promise<number> =>
+  await page.evaluate(() => {
+    const context: unknown = Reflect.get(globalThis, "audioOutputContext");
+    if (!(context instanceof AudioContext)) {
+      throw new TypeError("Missing audio output clock");
+    }
+    return context.currentTime;
+  });
+
+const waitForAudio = async (page: Page, seconds: number): Promise<void> => {
+  const start = await audioTime(page);
+  await expect
+    .poll(async () => (await audioTime(page)) - start, { intervals: [20] })
+    .toBeGreaterThan(seconds);
+};
+
+const outputRMS = async (page: Page): Promise<number> =>
+  await page.evaluate(() => Number(Reflect.get(globalThis, "audioOutputRMS")));
+
+test("held MIDI effect envelopes retain their decay through chord edits and transport bars", async ({
+  page,
+}) => {
+  const song = midiSong();
+  song.tempo = 300;
+  song.beatsPerBar = 1;
+  song.loopStart = 0;
+  song.loopEnd = 2;
+  const instrument = required(required(song.channels[0]).instruments[0]);
+  instrument.volume = 0.02;
+  const gain = createEffect("Gain");
+  gain.parameters["gain"] = 24;
+  instrument.effects = [gain];
+  instrument.envelopes = [
+    {
+      ...createEnvelope(),
+      type: "Decay",
+      target: `effect:${gain.id}:gain`,
+      timeBasis: "seconds",
+      a: 1,
+      b: 0,
+      speed: 1,
+    },
+  ];
+  await setupMidi(page, song);
+  await sendMidi(page, "primary", [144, 60, 100]);
+  await expectAudible(page);
+  await waitForAudio(page, 1.5);
+  const settled = await outputRMS(page);
+  expect(settled).toBeGreaterThan(0.001);
+
+  // A reset boosts the whole held chord by up to 24 dB. Adding a voice alone
+  // stays within this generous bound, including oscillator phase differences.
+  for (const message of [
+    [144, 64, 100],
+    [128, 64, 0],
+  ]) {
+    await sendMidi(page, "primary", message);
+    await waitForAudio(page, 0.12);
+    const level = await outputRMS(page);
+    expect(level).toBeGreaterThan(settled * 0.5);
+    expect(level).toBeLessThan(settled * 3);
+  }
+
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await waitForAudio(page, 1.5);
+  // Empty score bars last 200 ms. They must not restart a MIDI note's envelope.
+  for (let bar = 0; bar < 3; bar++) {
+    await waitForAudio(page, 0.2);
+    const level = await outputRMS(page);
+    expect(level).toBeGreaterThan(settled * 0.5);
+    expect(level).toBeLessThan(settled * 2);
+  }
+  await sendMidi(page, "primary", [128, 60, 0]);
+  await expectSilent(page);
 });

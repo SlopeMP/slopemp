@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { SongRenderer } from "../../src/audio";
 import { createEffect, createEnvelope, createInstrument } from "../../src/instruments";
-import { createNote, createSong, required } from "../../src/model";
+import { createChannel, createNote, createSong, required } from "../../src/model";
 import type { Song } from "../../src/model";
 
 const sampleRate = 8000;
@@ -115,6 +115,36 @@ for (const type of ["chip wave", "FM (n-op)", "Custom chip wave"]) {
     press(48);
     verify(0, 800);
     release(48);
+    press(48);
+    verify(0, 800);
+  });
+
+  test(`${type} live effect envelopes continue through handoffs between render calls`, () => {
+    const { actual, dry, press, release, verify } = livePair(type);
+    actual.playing = false;
+    dry.playing = false;
+    press(48);
+    verify(0, 800);
+    press(52);
+    release(48);
+    verify(800, 800);
+    press(55);
+    release(52);
+    press(60);
+    release(55);
+    verify(1600, 800);
+  });
+
+  test(`${type} live effect envelopes restart after a note leaves its track between render calls`, () => {
+    const { actual, dry, press, verify } = livePair(type);
+    actual.playing = false;
+    dry.playing = false;
+    actual.song.channels.push(createChannel());
+    dry.song.channels.push(createChannel());
+    press(48);
+    verify(0, 800);
+    actual.audition(required(actual.song.channels[1]), 48);
+    dry.audition(required(dry.song.channels[1]), 48);
     press(48);
     verify(0, 800);
   });

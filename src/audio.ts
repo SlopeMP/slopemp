@@ -3364,10 +3364,20 @@ export class SongRenderer {
       pitches.push(pitch);
     }
     for (const channel of this.song.channels) {
+      const pitches = this.livePitches.get(channel.id) ?? noPitches;
+      const noteIds =
+        pitches.length > 0
+          ? pitches.map((pitch) => required(this.liveNoteIds.get(pitch)))
+          : noPitches;
       for (const instrument of channel.instruments) {
-        this.upstreamRenderers
-          .get(instrument.id)
-          ?.native.runtime.setLivePitches(this.livePitches.get(channel.id) ?? noPitches);
+        const effectNote = this.effectNotes.get(instrument.id);
+        // Preserve each overlapping handoff when events arrive between render
+        // calls, before the intermediate chord can disappear from the snapshot.
+        if (effectNote?.liveNoteIds.some((id) => noteIds.includes(id)) === true) {
+          effectNote.livePitches = pitches;
+          effectNote.liveNoteIds = noteIds;
+        }
+        this.upstreamRenderers.get(instrument.id)?.native.runtime.setLivePitches(pitches);
       }
     }
   }

@@ -18,10 +18,12 @@ import { createNote, createSong, required } from "../../src/model";
 import { decodeSoundFont, loadSoundFont } from "../../src/soundfont-loader";
 import {
   applySFModulators,
+  createSFEnvelopeState,
   defaultSFControllers,
   mergeSFModulators,
   preparedSFEnvelopeValue,
   prepareSFEnvelope,
+  sampleSFEnvelope,
   SF2_DEFAULT_GENERATORS,
   sfModulatorSource,
   timecentsToSeconds,
@@ -213,6 +215,39 @@ describe("native SoundFont envelopes and modulators", (): void => {
     g.set(38, 8000);
     expect(preparedSFEnvelopeValue(volume, 0.5)).toBe(0.5);
     expect(preparedSFEnvelopeValue(volume, 1.5, 0.5)).toBe(0);
+  });
+  test("incremental native envelopes follow the analytical curve across stages and interrupted releases", () => {
+    const generators = new Map(SF2_DEFAULT_GENERATORS);
+    for (const volume of [false, true]) {
+      const base = volume ? 33 : 25;
+      generators.set(base, -8400);
+      generators.set(base + 1, -6000);
+      generators.set(base + 2, -7200);
+      generators.set(base + 3, -1200);
+      generators.set(base + 4, volume ? 600 : 750);
+      generators.set(base + 5, 1200);
+      const envelope = prepareSFEnvelope(generators, 60, volume);
+      for (const release of [undefined, 0.02, 0.1, 0.8]) {
+        const state = createSFEnvelopeState();
+        const step = 1 / 8000;
+        let age = 0;
+        let error = 0;
+        for (let frame = 0; frame < 32_000; frame++) {
+          const releasedAt = release !== undefined && age >= release ? release : undefined;
+          const actual = sampleSFEnvelope(envelope, state, age, releasedAt, step);
+          error = Math.max(
+            error,
+            Math.abs(actual - preparedSFEnvelopeValue(envelope, age, releasedAt)),
+          );
+          age += step;
+        }
+        expect(error).toBeLessThan(1e-11);
+        // A discontinuous age restarts from the exact native level.
+        expect(sampleSFEnvelope(envelope, state, 0.015, undefined, step)).toBe(
+          preparedSFEnvelopeValue(envelope, 0.015),
+        );
+      }
+    }
   });
 });
 describe("SoundFont import and rendering", (): void => {

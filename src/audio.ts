@@ -20,6 +20,7 @@ import {
   defaultSFControllers,
   preparedSFEnvelopeValue,
   prepareSFEnvelope,
+  sampleSFEnvelope,
   SF2_DEFAULT_GENERATORS,
 } from "./synth/soundfont";
 import { decodePCMSoundFont, parseSoundFont } from "./synth/soundfont-file";
@@ -1989,9 +1990,21 @@ const soundFontSample = (
     remaining = true;
     const modEnv =
       zone.envPitch !== 0 || zone.envFilter !== 0
-        ? preparedSFEnvelopeValue(zone.modEnvelope, voice.age, voice.released)
+        ? sampleSFEnvelope(
+            zone.modEnvelope,
+            zone.modEnvelopeState,
+            voice.age,
+            voice.released,
+            1 / sampleRate,
+          )
         : 0;
-    const volEnv = preparedSFEnvelopeValue(zone.volEnvelope, voice.age, voice.released);
+    const volEnv = sampleSFEnvelope(
+      zone.volEnvelope,
+      zone.volEnvelopeState,
+      voice.age,
+      voice.released,
+      1 / sampleRate,
+    );
     const modLFO =
       (zone.modPitch !== 0 || zone.modFilter !== 0 || zone.modVolume !== 0) &&
       voice.age >= zone.modDelay

@@ -2,11 +2,12 @@ import { required } from "../model";
 import {
   absoluteCentsToHz,
   applySFModulators,
+  createSFEnvelopeState,
   defaultSFControllers,
   prepareSFEnvelope,
   timecentsToSeconds,
 } from "./soundfont";
-import type { PreparedSFEnvelope } from "./soundfont";
+import type { PreparedSFEnvelope, SFEnvelopeState } from "./soundfont";
 import type { SFPreset, SFSample, SoundFont } from "./soundfont-file";
 
 const TAU = Math.PI * 2;
@@ -31,6 +32,8 @@ type SFVoiceZone = {
   gain: number;
   modEnvelope: PreparedSFEnvelope;
   volEnvelope: PreparedSFEnvelope;
+  modEnvelopeState: SFEnvelopeState;
+  volEnvelopeState: SFEnvelopeState;
   modPitch: number;
   vibPitch: number;
   envPitch: number;
@@ -122,6 +125,8 @@ export const prepareSoundFontVoice = (
       gain: 0.5 * 10 ** (-attenuation / 200),
       modEnvelope: prepareSFEnvelope(g, key, false),
       volEnvelope: prepareSFEnvelope(g, key, true),
+      modEnvelopeState: createSFEnvelopeState(),
+      volEnvelopeState: createSFEnvelopeState(),
       modPitch: g.get(5) ?? 0,
       vibPitch: g.get(6) ?? 0,
       envPitch: g.get(7) ?? 0,

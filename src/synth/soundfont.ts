@@ -231,3 +231,84 @@ export const preparedSFEnvelopeValue = (
   const initial = preparedSFEnvelopeLevel(envelope, releasedAt);
   return envelope.volume ? initial * 10 ** (-5 * progress) : initial * (1 - progress);
 };
+
+export type SFEnvelopeState = {
+  nextAge: number;
+  releasedAt: number | undefined;
+  until: number;
+  remaining: number;
+  level: number;
+  multiplier: number;
+  delta: number;
+};
+export const createSFEnvelopeState = (): SFEnvelopeState => ({
+  nextAge: Number.NaN,
+  releasedAt: undefined,
+  until: 0,
+  remaining: 0,
+  level: 0,
+  multiplier: 1,
+  delta: 0,
+});
+
+// Native stages are straight lines or exponentials. Advance them with additions
+// and multiplications, anchoring periodically so long tails cannot accumulate drift.
+// A discontinuity in age or a new release always starts from the analytical curve.
+export const sampleSFEnvelope = (
+  envelope: PreparedSFEnvelope,
+  state: SFEnvelopeState,
+  age: number,
+  releasedAt: number | undefined,
+  step: number,
+): number => {
+  if (
+    age !== state.nextAge ||
+    releasedAt !== state.releasedAt ||
+    age >= state.until ||
+    state.remaining === 0
+  ) {
+    state.releasedAt = releasedAt;
+    state.level = preparedSFEnvelopeValue(envelope, age, releasedAt);
+    state.multiplier = 1;
+    state.delta = 0;
+    state.until = Number.POSITIVE_INFINITY;
+    state.remaining = 256;
+    if (releasedAt !== undefined && age >= releasedAt) {
+      const release = Math.max(1e-9, envelope.release);
+      if (age - releasedAt < release) {
+        state.until = releasedAt + release;
+        if (envelope.volume) {
+          state.multiplier = 10 ** ((-5 * step) / release);
+        } else {
+          state.delta = (-preparedSFEnvelopeLevel(envelope, releasedAt) * step) / release;
+        }
+      }
+    } else {
+      const t = age - envelope.delay;
+      if (t < 0) {
+        state.until = envelope.delay;
+      } else if (t < envelope.attack) {
+        state.until = envelope.delay + envelope.attack;
+        state.delta = step / Math.max(1e-9, envelope.attack);
+      } else if (t < envelope.attack + envelope.hold) {
+        state.until = envelope.delay + envelope.attack + envelope.hold;
+      } else if (t - envelope.attack - envelope.hold < envelope.decay) {
+        state.until = envelope.delay + envelope.attack + envelope.hold + envelope.decay;
+        const decay = Math.max(1e-9, envelope.decay);
+        if (envelope.volume) {
+          state.multiplier = 10 ** ((envelope.sustainExponent * step) / decay);
+        } else {
+          state.delta = (-(1 - envelope.sustain) * step) / decay;
+        }
+      }
+      if (releasedAt !== undefined) {
+        state.until = Math.min(state.until, releasedAt);
+      }
+    }
+  }
+  const value = state.level;
+  state.level = state.level * state.multiplier + state.delta;
+  state.nextAge = age + step;
+  state.remaining--;
+  return value;
+};

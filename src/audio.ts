@@ -2319,6 +2319,12 @@ export class SongRenderer {
       bindings: Map<string, Array<{ envelope: Envelope; parameter: string }>>;
     }
   >();
+  // Synchronous block rendering consumes each pair before the next sample.
+  // Direct sample() calls still return independently owned output arrays.
+  private readonly blockOutput: Stereo = [0, 0];
+  private readonly blockInput: Stereo = [0, 0];
+  private readonly channelMix: Stereo = [0, 0];
+  private readonly instrumentMix: Stereo = [0, 0];
   private renderChannels: RenderChannel[] = [];
   private renderBar = -1;
   private renderPlaying = false;
@@ -2456,7 +2462,12 @@ export class SongRenderer {
     }
     const globals = planned?.globals ?? this.frameGlobals();
     this.effectiveTempo = globals.tempo;
-    let output: Stereo = input ?? [0, 0];
+    const reuse = this.activeRenderBlock !== 0;
+    let output: Stereo = input ?? (reuse ? this.blockOutput : [0, 0]);
+    if (input === undefined) {
+      output[0] = 0;
+      output[1] = 0;
+    }
     const frame = ++this.sampleFrame;
     this.activeVoiceCount = 0;
     for (const track of input === undefined ? this.renderChannels : []) {
@@ -2465,11 +2476,15 @@ export class SongRenderer {
       this.soundingChannels.add(channel.id);
       let note: Note | null | undefined = this.playing ? null : undefined;
       let contour: NoteContour | null = null;
-      let channelOutput: Stereo = [0, 0];
+      let channelOutput: Stereo = reuse ? this.channelMix : [0, 0];
+      channelOutput[0] = 0;
+      channelOutput[1] = 0;
       let hasChannelProcessing: boolean | null = null;
       const livePitches = this.livePitches.get(channel.id) ?? noPitches;
       for (const instrument of channel.instruments) {
-        let instrumentOutput: Stereo = [0, 0];
+        let instrumentOutput: Stereo = reuse ? this.instrumentMix : [0, 0];
+        instrumentOutput[0] = 0;
+        instrumentOutput[1] = 0;
         const nativeSource = usesUpstreamSynth(instrument);
         if (nativeSource) {
           hasChannelProcessing ??=
@@ -2713,10 +2728,14 @@ export class SongRenderer {
     if (this.renderMaster) {
       output = this.auto(output, this.automation.get("song"));
       const gain = globals.volume / 100;
-      output = [
-        Math.fround(Math.fround(output[0]) * gain),
-        Math.fround(Math.fround(output[1]) * gain),
-      ];
+      const left = Math.fround(Math.fround(output[0]) * gain);
+      const right = Math.fround(Math.fround(output[1]) * gain);
+      if (reuse) {
+        output[0] = left;
+        output[1] = right;
+      } else {
+        output = [left, right];
+      }
     }
     if (!planned) {
       this.advanceClock(globals.tempo);
@@ -2975,7 +2994,11 @@ export class SongRenderer {
       }
       for (let i = 0; i < left.length; i++) {
         this.nativeBlockFrame = i;
-        const input: Stereo | undefined = mix ? [left[i] ?? 0, right[i] ?? 0] : undefined;
+        const input = mix ? this.blockInput : undefined;
+        if (input) {
+          input[0] = left[i] ?? 0;
+          input[1] = right[i] ?? 0;
+        }
         const pair = this.sample(input, plan?.frames[i]);
         [left[i], right[i]] = pair;
       }

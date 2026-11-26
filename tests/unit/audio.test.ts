@@ -271,6 +271,28 @@ describe("stereo effects", (): void => {
   });
 });
 describe("automation and synthesis", (): void => {
+  test("direct samples retain their values when rendering resumes in blocks", () => {
+    const song = shortSong();
+    song.channels = song.channels.slice(0, 1);
+    const channel = required(song.channels[0]);
+    const instrument = createInstrument("FM (n-op)");
+    instrument.attack = 0;
+    channel.instruments = [instrument];
+    const renderer = new SongRenderer(song, 8000);
+    const left = new Float32Array(64);
+    const right = new Float32Array(64);
+    renderer.process(left, right);
+    const first = renderer.sample();
+    const expected: typeof first = [...first];
+    const second = renderer.sample();
+    expect(second).not.toBe(first);
+    renderer.process(left, right);
+    expect(first).toEqual(expected);
+    expect(left.some((sample) => sample !== 0)).toBe(true);
+    const third = renderer.sample();
+    expect(third).not.toBe(first);
+    expect(third).not.toBe(second);
+  });
   test("lane interpolation ends at its explicit boundary", (): void => {
     const lane = {
       id: "lane",

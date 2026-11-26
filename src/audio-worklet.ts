@@ -13,6 +13,8 @@ declare class AudioWorkletProcessor {
 class SlopeOutput extends AudioWorkletProcessor {
   private readonly output: AudioOutputBuffer;
   private offset = 0;
+  private generation = -1;
+  private waiting = true;
 
   public constructor(options: OutputOptions) {
     super();
@@ -29,6 +31,11 @@ class SlopeOutput extends AudioWorkletProcessor {
     // Get the write cursor first so a block published after a generation change
     // cannot be read with the previous generation.
     const { writeIndex: end, generation, readIndex } = output;
+    if (this.generation !== generation) {
+      this.generation = generation;
+      this.waiting = true;
+      this.offset = 0;
+    }
     let index = readIndex;
     let frame = 0;
     while (index !== end && frame < left.length) {
@@ -37,6 +44,14 @@ class SlopeOutput extends AudioWorkletProcessor {
         output.release(index);
         index = nextAudioBlock(index);
         continue;
+      }
+      // Cold voices and newly started workers can take longer than a quantum.
+      // Begin each transport generation only after its scheduling margin exists.
+      if (this.waiting) {
+        if ((end - index) >>> 0 < output.queuedBlocks) {
+          return true;
+        }
+        this.waiting = false;
       }
       const block = output.block(index);
       const count = Math.min(left.length - frame, audioBlockFrames - this.offset);

@@ -7,7 +7,7 @@ test("audio queues preserve a scheduling margin across device sample rates and l
     for (const baseLatency of [0, 0.01, 0.02, 0.04]) {
       const output = AudioOutputBuffer.create(sampleRate, baseLatency);
       const duration = (output.queuedBlocks * audioBlockFrames) / sampleRate;
-      const minimum = Math.max(0.02, 2 * baseLatency);
+      const minimum = Math.max(0.08, 2 * baseLatency);
       expect(duration).toBeGreaterThanOrEqual(minimum);
       expect(duration).toBeLessThan(minimum + audioBlockFrames / sampleRate);
       expect(new AudioOutputBuffer(output.buffer).queuedBlocks).toBe(output.queuedBlocks);
@@ -18,7 +18,9 @@ test("audio queues preserve a scheduling margin across device sample rates and l
     expect(AudioOutputBuffer.create(48_000, baseLatency).queuedBlocks).toBe(fallback);
   }
   const capped = AudioOutputBuffer.create(48_000, 1);
-  expect((capped.queuedBlocks * audioBlockFrames) / 48_000).toBeLessThan(0.106);
+  expect((capped.queuedBlocks * audioBlockFrames) / 48_000).toBeLessThan(
+    0.1 + audioBlockFrames / 48_000,
+  );
 });
 
 test("sized shared buffers retain both transport generations and wrap without losing timestamps", () => {

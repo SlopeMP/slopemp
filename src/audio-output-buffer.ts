@@ -1,4 +1,5 @@
-export const audioBlockFrames = 256;
+// Amortize worker scheduling across four Web Audio render quanta.
+export const audioBlockFrames = 512;
 const readCursor = 0;
 const writeCursor = 1;
 const generationCursor = 2;
@@ -60,9 +61,10 @@ export class AudioOutputBuffer {
 
   public static create(sampleRate: number, baseLatency = 0): AudioOutputBuffer {
     // Audio callbacks can consume several blocks before the worker gets CPU time.
-    // Keep at least 20 ms queued, scaling with the device's processing latency.
+    // Keep at least 80 ms queued so cold voices and garbage collection can
+    // finish without starving the worklet, scaling with device latency.
     const latency = Number.isFinite(baseLatency) ? Math.max(0, baseLatency) : 0;
-    const seconds = Math.max(0.02, Math.min(0.1, 2 * latency));
+    const seconds = Math.max(0.08, Math.min(0.1, 2 * latency));
     const queuedBlocks = Math.max(2, Math.ceil((sampleRate * seconds) / audioBlockFrames));
     // Reserve two generations. Power-of-two capacity keeps slot addressing
     // continuous when the unsigned 32-bit cursors wrap.

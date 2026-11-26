@@ -174,7 +174,9 @@ test("the audio bridge retains only song resources, forwards replacements, and r
     expect(context.modules).toEqual(["https://example.com/slopemp/audio-worklet.js"]);
     expect(node.connected).toBe(true);
     expect(node.output).toBeInstanceOf(SharedArrayBuffer);
-    expect(new AudioOutputBuffer(node.output).queuedBlocks).toBe(3);
+    expect(
+      (new AudioOutputBuffer(node.output).queuedBlocks * audioBlockFrames) / context.sampleRate,
+    ).toBeGreaterThanOrEqual(2 * context.baseLatency);
     expect(init.output).toBe(node.output);
     const initIndex = worker.commands.findIndex((command) => command.type === "init");
     const snapshots = worker.commands

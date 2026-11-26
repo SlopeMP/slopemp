@@ -6,7 +6,9 @@ import type { Page } from "@playwright/test";
 import { createInstrument, presetInstrument } from "../../src/instruments";
 import { createChannel, createNote, createSong, required } from "../../src/model";
 import { decodeSong, encodeSong } from "../../src/storage";
+import { denseSoundFontSong } from "../fixtures/dense-soundfont-song";
 import { expectAudible, probeOutput } from "./audio-output";
+import { seedStorage } from "./stored-state";
 
 // Measure every rendered sample on the audio thread. Analyser polling on the UI
 // thread cannot observe a dropout that starts and ends while that thread is busy.
@@ -56,6 +58,7 @@ test.beforeAll(async () => {
           frames = 0;
           silent = 0;
           longestSilence = 0;
+          longestSilenceAt = 0;
           audible = false;
           invalid = false;
           constructor() {
@@ -63,11 +66,13 @@ test.beforeAll(async () => {
             this.port.onmessage = ({ data }) => {
               if (data === "start") {
                 this.frames = this.silent = this.longestSilence = 0;
+                this.longestSilenceAt = 0;
                 this.audible = this.invalid = false;
               }
               this.port.postMessage({
                 frames: this.frames,
                 longestSilence: this.longestSilence,
+                longestSilenceAt: this.longestSilenceAt,
                 audible: this.audible,
                 invalid: this.invalid,
               });
@@ -88,7 +93,10 @@ test.beforeAll(async () => {
                 this.silent = 0;
               } else {
                 this.silent++;
-                this.longestSilence = Math.max(this.longestSilence, this.silent);
+                if (this.silent > this.longestSilence) {
+                  this.longestSilence = this.silent;
+                  this.longestSilenceAt = this.frames + frame;
+                }
               }
             }
             this.frames += length;
@@ -127,6 +135,57 @@ const continuity = async (page: Page, command: "report" | "start"): Promise<Cont
     probe.port.postMessage(message, []);
     return await result;
   }, command);
+
+for (const { tracks, audioThreads } of [
+  { tracks: 8, audioThreads: 1 },
+  { tracks: 32, audioThreads: 8 },
+]) {
+  test(`${tracks * 2} simultaneous SoundFont instruments play without audio gaps on ${audioThreads} audio threads`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await seedStorage(page, { preferences: { audioThreads } });
+    await probeContinuity(page);
+    await page.route("**/test-assets/dense.sf2", async (route) => {
+      await route.fulfill({
+        path: new URL("../assets/florestan-subset.sf2", import.meta.url).pathname,
+      });
+    });
+    await page.goto(`./#${encodeSong(denseSoundFontSong(tracks))}`);
+    await page.getByRole("combobox", { name: "Edit menu", exact: true }).selectOption("Add Assets");
+    const assets = page.getByRole("dialog", { name: "Add Assets", exact: true });
+    await expect(assets.getByText("Ready", { exact: true })).toHaveCount(1);
+    await assets.getByRole("button", { name: "Okay", exact: true }).click();
+    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await expect
+      .poll(async () => await page.evaluate(() => Reflect.has(globalThis, "audioContinuityProbe")))
+      .toBe(true);
+    await expect.poll(async () => (await continuity(page, "report")).audible).toBe(true);
+    // Include cold voices, repeated chord starts, release tails and a loop boundary.
+    await continuity(page, "start");
+    await page.evaluate(() => {
+      const until = performance.now() + 200;
+      while (performance.now() < until) {
+        // Playback must keep running while the editor thread is occupied.
+      }
+    });
+    await page.waitForTimeout(1000);
+    const volume = page
+      .getByRole("region", { name: "Instrument Settings", exact: true })
+      .getByRole("spinbutton", { name: "Volume %", exact: true });
+    await volume.fill("4");
+    await volume.press("Enter");
+    await expect(volume).toHaveValue("4");
+    await page.waitForTimeout(2600);
+    const output = await continuity(page, "report");
+    expect(output.frames).toBeGreaterThan(100_000);
+    expect(output.audible).toBe(true);
+    expect(output.invalid).toBe(false);
+    expect(output.longestSilence, JSON.stringify(output)).toBeLessThan(128);
+    expect(errors).toEqual([]);
+  });
+}
 
 for (const native of [false, true]) {
   test(`${native ? "native" : "custom"} playback has no audio gaps during edits and a blocked UI thread`, async ({

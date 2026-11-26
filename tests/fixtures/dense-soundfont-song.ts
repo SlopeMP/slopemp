@@ -7,6 +7,7 @@ import type { Song } from "../../src/model";
 export const denseSoundFontSong = (tracks = 32): Song => {
   const song = createSong();
   song.beatsPerBar = 8;
+  song.loopEnd = 1;
   song.resources = [{ id: "dense-font", url: "./test-assets/dense.sf2" }];
   song.channels = Array.from({ length: tracks }, (_unused, index) => {
     const channel = createChannel("track", song.barCount, song.patternCount);

@@ -4,6 +4,7 @@ import type { Page } from "@playwright/test";
 import type { AudioCommand } from "../../src/audio";
 import { createInstrument } from "../../src/instruments";
 import { createSong, required } from "../../src/model";
+import type { Song } from "../../src/model";
 import { encodeSong } from "../../src/storage";
 import { expectAudible, probeOutput } from "./audio-output";
 import { seedStorage } from "./stored-state";
@@ -31,9 +32,21 @@ const expectSilent = async (page: Page): Promise<void> => {
     .toBeLessThan(0.000001);
 };
 
-test("MIDI layers and duplicate ports sustain one note until its last release or disconnect", async ({
-  page,
-}) => {
+const midiSong = (): Song => {
+  const song = createSong();
+  song.key = 0;
+  const channel = required(song.channels[0]);
+  song.channels = [channel];
+  channel.cells.fill(0);
+  const instrument = createInstrument("Custom chip wave");
+  instrument.attack = 0;
+  instrument.release = 0;
+  instrument.effects = [];
+  channel.instruments = [instrument];
+  return song;
+};
+
+const setupMidi = async (page: Page, song = midiSong()): Promise<void> => {
   await seedStorage(page, { preferences: { midi: true, audioThreads: 1 } });
   await probeOutput(page);
   await page.addInitScript(() => {
@@ -83,16 +96,6 @@ test("MIDI layers and duplicate ports sustain one note until its last release or
     }
     Reflect.set(globalThis, "Worker", ObservedWorker);
   });
-  const song = createSong();
-  song.key = 0;
-  const channel = required(song.channels[0]);
-  song.channels = [channel];
-  channel.cells.fill(0);
-  const instrument = createInstrument("Custom chip wave");
-  instrument.attack = 0;
-  instrument.release = 0;
-  instrument.effects = [];
-  channel.instruments = [instrument];
   await page.goto(`./#${encodeSong(song)}`);
   await expect
     .poll(
@@ -118,6 +121,12 @@ test("MIDI layers and duplicate ports sustain one note until its last release or
     }
     observed.length = 0;
   });
+};
+
+test("MIDI layers and duplicate ports sustain one note until its last release or disconnect", async ({
+  page,
+}) => {
+  await setupMidi(page);
 
   await sendMidi(page, "primary", [144, 60, 100]);
   await sendMidi(page, "primary", [145, 60, 100]);

@@ -6,6 +6,8 @@ import type {
   SongRenderer,
 } from "./audio";
 import { audioResourceIds } from "./audio-resource-ids";
+import { AudioTrackOutput } from "./audio-track-output";
+import type { TrackOutputConfig } from "./audio-track-output";
 import { AudioTrackSession, packTrackPlan, updateTrackConfig } from "./audio-track-session";
 import type { StereoBlock, TrackRenderPlan } from "./audio-track-session";
 import type { Song } from "./model";
@@ -30,10 +32,18 @@ export type AudioTrackCommand =
       trackIds: string[];
       resources: AudioResourceUpdate[];
     }
-  | { type: "render"; id: number; frames: number; plan?: TrackRenderPlan }
+  | {
+      type: "render";
+      id: number;
+      frames: number;
+      plan?: TrackRenderPlan;
+      output?: TrackOutputConfig | true;
+    }
   | { type: "update"; command: TrackUpdate; trackIds: string[]; position: TrackPosition };
 export type AudioTrackReply =
-  { type: "error"; message: string } | { type: "rendered"; id: number; stems: TrackStem[] };
+  | { type: "error"; message: string }
+  | { type: "rendered"; id: number; stems: TrackStem[] }
+  | { type: "renderedShared"; id: number; channelIds: string[] };
 
 type PendingRender = {
   resolve: (stems: TrackStem[]) => void;
@@ -46,6 +56,7 @@ type TrackWorker = {
   resources: Map<string, number>;
   pending: Map<number, PendingRender>;
   failure: Error | null;
+  output: AudioTrackOutput | null;
 };
 
 export const mixStems = (stems: readonly TrackStem[], length: number): StereoBlock => {
@@ -68,6 +79,8 @@ export class AudioThreadPool {
   private readonly resources = new Map<string, TrackResource>();
   private resourceVersion = 0;
   private local: AudioTrackSession | null = null;
+  private localOutput: AudioTrackOutput | null = null;
+  private blockWork: Promise<void> = Promise.resolve();
   private taskId = 0;
   private closed = false;
 
@@ -134,23 +147,64 @@ export class AudioThreadPool {
     frames: number,
     finite = false,
   ): Promise<StereoBlock> {
-    const plan = renderer.preparePlan(frames, finite);
-    const { length } = plan.frames;
-    const block = mixStems(length === 0 ? [] : await this.render(length, plan), length);
-    if (length > 0) {
-      renderer.processMix(block.left, block.right, plan);
+    // Keep shared stems private until they have been mixed into independent
+    // output arrays, including when callers request multiple blocks at once.
+    const previous = this.blockWork;
+    const next = Promise.withResolvers<undefined>();
+    this.blockWork = next.promise;
+    await previous;
+    try {
+      const plan = renderer.preparePlan(frames, finite);
+      const { length } = plan.frames;
+      const block = mixStems(
+        length === 0 ? [] : await this.renderTracks(length, plan, true),
+        length,
+      );
+      if (length > 0) {
+        renderer.processMix(block.left, block.right, plan);
+      }
+      return block;
+    } finally {
+      next.resolve(undefined);
     }
-    return block;
   }
 
   public async render(frames: number, plan?: RenderPlan): Promise<TrackStem[]> {
+    return await this.renderTracks(frames, plan, false);
+  }
+
+  public close(): void {
+    this.closed = true;
+    this.local?.close();
+    this.local = null;
+    this.localOutput = null;
+    for (const slot of this.workers) {
+      this.fail(slot, new Error("Audio thread pool closed."));
+      slot.worker.terminate();
+    }
+    this.workers.length = 0;
+  }
+
+  private async renderTracks(
+    frames: number,
+    plan: RenderPlan | undefined,
+    shared: boolean,
+  ): Promise<TrackStem[]> {
     this.ensureOpen();
+    const trackIds = this.trackIds();
     if (this.local) {
-      return this.local.render(frames, plan);
+      if (!shared) {
+        return this.local.render(frames, plan);
+      }
+      let output = this.localOutput;
+      if (output?.matches(frames, trackIds) !== true) {
+        output = AudioTrackOutput.create(frames, trackIds);
+        this.localOutput = output;
+      }
+      return this.local.render(frames, plan, output.buffers);
     }
     const trackPlan = plan && packTrackPlan(plan);
     const id = this.taskId++;
-    const trackIds = this.trackIds();
     const groups = await Promise.all(
       this.workers.map(async (slot): Promise<TrackStem[]> => {
         if (slot.failure) {
@@ -158,7 +212,22 @@ export class AudioThreadPool {
         }
         return await new Promise<TrackStem[]>((resolve, reject) => {
           slot.pending.set(id, { resolve, reject });
-          this.send(slot, { type: "render", id, frames, ...(trackPlan && { plan: trackPlan }) });
+          let output: TrackOutputConfig | true | null = null;
+          if (shared) {
+            if (slot.output?.matches(frames, slot.trackIds) === true) {
+              output = true;
+            } else {
+              slot.output = AudioTrackOutput.create(frames, slot.trackIds);
+              output = slot.output.config;
+            }
+          }
+          this.send(slot, {
+            type: "render",
+            id,
+            frames,
+            ...(trackPlan && { plan: trackPlan }),
+            ...(output !== null && { output }),
+          });
         });
       }),
     );
@@ -168,17 +237,6 @@ export class AudioThreadPool {
       const stem = stems.get(channelId);
       return stem ? [stem] : [];
     });
-  }
-
-  public close(): void {
-    this.closed = true;
-    this.local?.close();
-    this.local = null;
-    for (const slot of this.workers) {
-      this.fail(slot, new Error("Audio thread pool closed."));
-      slot.worker.terminate();
-    }
-    this.workers.length = 0;
   }
 
   private trackIds(): string[] {
@@ -232,6 +290,7 @@ export class AudioThreadPool {
       resources: new Map(),
       pending: new Map(),
       failure: null,
+      output: null,
     };
     worker.addEventListener("error", (event) => {
       this.fail(slot, new Error(event.message || "Audio track worker failed."));
@@ -241,7 +300,16 @@ export class AudioThreadPool {
       if (reply.type === "error") {
         this.fail(slot, new Error(reply.message));
       } else {
-        slot.pending.get(reply.id)?.resolve(reply.stems);
+        const pending = slot.pending.get(reply.id);
+        if (reply.type === "renderedShared") {
+          if (!slot.output) {
+            this.fail(slot, new Error("Audio worker has no shared output buffer."));
+            return;
+          }
+          pending?.resolve(slot.output.stems(reply.channelIds));
+        } else {
+          pending?.resolve(reply.stems);
+        }
         slot.pending.delete(reply.id);
       }
     });

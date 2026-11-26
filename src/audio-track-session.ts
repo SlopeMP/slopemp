@@ -101,7 +101,11 @@ export class AudioTrackSession {
     }
   }
 
-  public render(frames: number, plan?: RenderPlan): TrackStem[] {
+  public render(
+    frames: number,
+    plan?: RenderPlan,
+    outputs?: ReadonlyMap<string, StereoBlock>,
+  ): TrackStem[] {
     if (plan && plan.frames.length !== frames) {
       throw new Error("Audio render plan length does not match the output block.");
     }
@@ -111,13 +115,21 @@ export class AudioTrackSession {
       if (block && renderer.skipSilentStem(block)) {
         continue;
       }
-      const buffers =
-        this.silentBuffers?.left.length === frames
-          ? this.silentBuffers
-          : { left: new Float32Array(frames), right: new Float32Array(frames) };
+      let buffers = outputs?.get(channelId);
+      if (!outputs) {
+        buffers =
+          this.silentBuffers?.left.length === frames
+            ? this.silentBuffers
+            : { left: new Float32Array(frames), right: new Float32Array(frames) };
+      }
+      if (buffers?.left.length !== frames || buffers.right.length !== frames) {
+        throw new Error("Audio track output does not match the render block.");
+      }
       const { left, right } = buffers;
       if (block && !renderer.processStem(left, right, block)) {
-        this.silentBuffers = buffers;
+        if (!outputs) {
+          this.silentBuffers = buffers;
+        }
         continue;
       }
       if (!block) {

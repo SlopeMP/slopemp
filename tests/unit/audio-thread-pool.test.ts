@@ -2,12 +2,13 @@ import { expect, test } from "bun:test";
 
 import { applyAudioResourceUpdate, SongRenderer } from "../../src/audio";
 import type { AudioResourceUpdate } from "../../src/audio";
-import { AudioThreadPool } from "../../src/audio-thread-pool";
+import { AudioThreadPool, mixStems } from "../../src/audio-thread-pool";
 import type {
   AudioTrackCommand,
   AudioTrackReply,
   TrackPoolConfig,
 } from "../../src/audio-thread-pool";
+import { AudioTrackOutput } from "../../src/audio-track-output";
 import { AudioTrackSession, packTrackPlan, TrackPlanDecoder } from "../../src/audio-track-session";
 import { createEffect, createInstrument } from "../../src/instruments";
 import { createChannel, createNote, createSong, required } from "../../src/model";
@@ -50,6 +51,7 @@ const probeWorkers = (defer = false): WorkerProbe => {
     public terminated = false;
     public readonly index: number;
     private readonly plans = new TrackPlanDecoder();
+    private output: AudioTrackOutput | null = null;
     public constructor() {
       super();
       this.index = workers.length;
@@ -68,15 +70,22 @@ const probeWorkers = (defer = false): WorkerProbe => {
         const complete = (): void => {
           metrics.inFlight--;
           metrics.completed.push(this.index);
+          if (command.output !== undefined && command.output !== true) {
+            this.output = new AudioTrackOutput(command.output);
+          }
           const stems = required(this.session ?? undefined).render(
             command.frames,
             command.plan && this.plans.decode(command.plan),
+            command.output !== undefined ? this.output?.buffers : undefined,
           );
-          const reply: AudioTrackReply = {
-            type: "rendered",
-            id: command.id,
-            stems,
-          };
+          const reply: AudioTrackReply =
+            command.output !== undefined
+              ? {
+                  type: "renderedShared",
+                  id: command.id,
+                  channelIds: stems.map((stem) => stem.channelId),
+                }
+              : { type: "rendered", id: command.id, stems };
           this.dispatchEvent(new MessageEvent("message", { data: reply }));
         };
         if (defer) {
@@ -475,6 +484,121 @@ test("a single audio thread renders every track locally with no child workers", 
     }
   } finally {
     pool.close();
+  }
+});
+
+for (const threadCount of [1, 4]) {
+  test(`${threadCount} audio threads reuse shared stems across blocks, sizes and track edits`, async () => {
+    const probe = probeWorkers();
+    const config = fixture(7, threadCount);
+    const pool = new AudioThreadPool(config);
+    const reference = new AudioThreadPool({ ...config, threadCount: 1 });
+    const master = new SongRenderer(config.song, config.sampleRate, 0, undefined, {
+      channelIds: new Set(),
+    });
+    const referenceMaster = new SongRenderer(config.song, config.sampleRate, 0, undefined, {
+      channelIds: new Set(),
+    });
+    const verify = async (frames: number): Promise<{ left: Float32Array; right: Float32Array }> => {
+      const plan = referenceMaster.preparePlan(frames);
+      const expected = mixStems(await reference.render(frames, plan), frames);
+      referenceMaster.processMix(expected.left, expected.right, plan);
+      const actual = await pool.renderBlock(master, frames);
+      expect(actual).toEqual(expected);
+      return actual;
+    };
+    const edit = (song: TrackPoolConfig["song"]): void => {
+      const command = { type: "song" as const, song };
+      const position = { bar: master.bar, beat: master.beat, clock: master.transportClock };
+      pool.update(command, position);
+      reference.update(command, position);
+      master.song = song;
+      referenceMaster.song = song;
+    };
+    try {
+      const first = await verify(256);
+      const retained = first.left.slice();
+      await verify(256);
+      for (const worker of probe.workers) {
+        const renders = worker.commands.filter((command) => command.type === "render");
+        expect(renders[0]?.output).toMatchObject({ frames: 256 });
+        expect(renders[1]?.output).toBe(true);
+      }
+      await verify(97);
+      await verify(256);
+      edit({ ...config.song, channels: config.song.channels.toReversed() });
+      await verify(256);
+      const song = structuredClone(master.song);
+      song.channels.pop();
+      const added = createChannel("track", song.barCount, song.patternCount);
+      added.cells.fill(1);
+      added.instruments = [createInstrument("Custom chip wave")];
+      required(added.patterns[1]).notes = [createNote(0, 4, 64)];
+      song.channels.push(added);
+      edit(song);
+      await verify(256);
+      expect(first.left).toEqual(retained);
+      // A muted track may leave old samples in its shared slot. Only stems
+      // published by the current render can enter the mix.
+      const muted = song.channels.map((channel) => channel.id);
+      pool.update({ type: "muted", muted });
+      reference.update({ type: "muted", muted });
+      const silent = await verify(256);
+      expect(silent.left.every((sample) => sample === 0)).toBe(true);
+    } finally {
+      pool.close();
+      reference.close();
+      master.reset();
+      referenceMaster.reset();
+      probe.restore();
+    }
+  });
+}
+
+test("concurrent block requests finish mixing before shared stems are reused", async () => {
+  const probe = probeWorkers();
+  const config = fixture(5, 3);
+  const pool = new AudioThreadPool(config);
+  const reference = new AudioThreadPool({ ...config, threadCount: 1 });
+  const master = new SongRenderer(config.song, config.sampleRate, 0, undefined, {
+    channelIds: new Set(),
+  });
+  const referenceMaster = new SongRenderer(config.song, config.sampleRate, 0, undefined, {
+    channelIds: new Set(),
+  });
+  try {
+    const actual = await Promise.all(
+      Array.from({ length: 4 }, async () => await pool.renderBlock(master, 256)),
+    );
+    for (const block of actual) {
+      expect(block).toEqual(await reference.renderBlock(referenceMaster, 256));
+    }
+  } finally {
+    pool.close();
+    reference.close();
+    master.reset();
+    referenceMaster.reset();
+    probe.restore();
+  }
+});
+
+test("independent stem renders keep their samples across shared and independent renders", async () => {
+  const probe = probeWorkers();
+  const config = fixture(3, 3);
+  const pool = new AudioThreadPool(config);
+  const master = new SongRenderer(config.song, config.sampleRate, 0, undefined, {
+    channelIds: new Set(),
+  });
+  try {
+    const first = await pool.render(256, master.preparePlan(256));
+    const samples = first.map((stem) => stem.left.slice());
+    await pool.renderBlock(master, 256);
+    await pool.render(256, master.preparePlan(256));
+    expect(first.map((stem) => stem.left)).toEqual(samples);
+  } finally {
+    pool.close();
+    master.reset();
+    probe.restore();
   }
 });
 

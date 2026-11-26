@@ -31,6 +31,25 @@ test("native live input detects array mutations and sustains equal replacement p
   }
 });
 
+test("native automated bar jumps retain releases and live tones", () => {
+  const song = createSong();
+  const channel = required(song.channels[0]);
+  const instrument = createInstrument("chip wave");
+  instrument.release = 0.5;
+  channel.cells = [1, 0];
+  required(channel.patterns[1]).notes = [createNote(0, 4, 48)];
+  channel.instruments = [instrument];
+  for (const pitches of [[], [72]]) {
+    const { runtime } = createNativeSynth(song, channel, instrument, 8000, envelopeValue);
+    runtime.process(new Float64Array(1000), new Float64Array(1000), true, pitches, 120, 0);
+    runtime.jumpToBar(1);
+    const left = new Float64Array(200);
+    runtime.process(left, new Float64Array(left.length), true, pitches, 120, 0);
+    expect(left.every(Number.isFinite)).toBe(true);
+    expect(left.some((sample) => Math.abs(sample) > 0.001)).toBe(true);
+  }
+});
+
 for (const chords of ["simultaneous", "strum", "arpeggio", "custom interval"]) {
   for (const count of [5, 12, 32]) {
     test(`native ${chords} playback retains all ${count} chord pitches`, () => {

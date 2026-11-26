@@ -2064,23 +2064,33 @@ const soundFontSample = (
       zone.a2 = (1 - alpha) / a0;
     }
     const h = zone.history;
+    const [
+      leftInput1,
+      leftInput2,
+      leftOutput1,
+      leftOutput2,
+      rightInput1,
+      rightInput2,
+      rightOutput1,
+      rightOutput2,
+    ] = h;
     const filteredL = finite(
-      zone.b0 * (l + 2 * (h[0] ?? 0) + (h[1] ?? 0)) - zone.a1 * (h[2] ?? 0) - zone.a2 * (h[3] ?? 0),
+      zone.b0 * (l + 2 * leftInput1 + leftInput2) - zone.a1 * leftOutput1 - zone.a2 * leftOutput2,
     );
     const filteredR = zone.mono
       ? filteredL
       : finite(
-          zone.b0 * (r + 2 * (h[4] ?? 0) + (h[5] ?? 0)) -
-            zone.a1 * (h[6] ?? 0) -
-            zone.a2 * (h[7] ?? 0),
+          zone.b0 * (r + 2 * rightInput1 + rightInput2) -
+            zone.a1 * rightOutput1 -
+            zone.a2 * rightOutput2,
         );
-    h[1] = h[0] ?? 0;
+    h[1] = leftInput1;
     h[0] = l;
-    h[3] = h[2] ?? 0;
+    h[3] = leftOutput1;
     h[2] = filteredL;
-    h[5] = h[4] ?? 0;
+    h[5] = rightInput1;
     h[4] = r;
-    h[7] = h[6] ?? 0;
+    h[7] = rightOutput1;
     h[6] = filteredR;
     l = filteredL;
     r = filteredR;

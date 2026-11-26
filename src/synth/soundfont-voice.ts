@@ -56,7 +56,7 @@ type SFVoiceZone = SFZoneConfig & {
   b0: number;
   a1: number;
   a2: number;
-  history: Float64Array;
+  history: [number, number, number, number, number, number, number, number];
   modEnvelopeState: SFEnvelopeState;
   volEnvelopeState: SFEnvelopeState;
 };
@@ -192,7 +192,7 @@ export const prepareSoundFontVoice = (
   originalKey,
   frequency: Number.NaN,
   midi: 0,
-  zones: cachedZones(font, preset, originalKey).map((zone) => ({
+  zones: cachedZones(font, preset, originalKey).map((zone): SFVoiceZone => ({
     ...zone,
     position: zone.start,
     rateCents: Number.NaN,
@@ -201,7 +201,7 @@ export const prepareSoundFontVoice = (
     b0: 0,
     a1: 0,
     a2: 0,
-    history: new Float64Array(8),
+    history: [0, 0, 0, 0, 0, 0, 0, 0],
     modEnvelopeState: createSFEnvelopeState(),
     volEnvelopeState: createSFEnvelopeState(),
   })),
